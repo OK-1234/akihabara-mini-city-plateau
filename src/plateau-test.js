@@ -34,9 +34,11 @@ const tiles = new TilesRenderer('./assets/plateau/tileset.json');
 const waterTiles = new TilesRenderer('./assets/plateau/tileset-water.json');
 const vegetationTiles = new TilesRenderer('./assets/plateau/tileset-vegetation.json');
 const roadTiles = new TilesRenderer('./assets/plateau/tileset-road.json');
+const bridgeTiles = new TilesRenderer('./assets/plateau/tileset-bridge.json');
 waterTiles.manager = tiles.manager;
 vegetationTiles.manager = tiles.manager;
 roadTiles.manager = tiles.manager;
+bridgeTiles.manager = tiles.manager;
 const draco = new DRACOLoader(tiles.manager);
 draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/libs/draco/gltf/');
 const gltf = new GLTFLoader(tiles.manager);
@@ -76,13 +78,19 @@ scene.add(vegetationTiles.group);
 roadTiles.group.matrix.copy(localToECEF).invert();
 roadTiles.group.matrixAutoUpdate = false;
 scene.add(roadTiles.group);
+bridgeTiles.group.matrix.copy(localToECEF).invert();
+bridgeTiles.group.matrixAutoUpdate = false;
+scene.add(bridgeTiles.group);
 tiles.setCamera(camera);
 waterTiles.setCamera(camera);
 vegetationTiles.setCamera(camera);
 roadTiles.setCamera(camera);
+bridgeTiles.setCamera(camera);
 roadTiles.setResolutionFromRenderer(camera, renderer);
 waterTiles.setResolutionFromRenderer(camera, renderer);
 vegetationTiles.setResolutionFromRenderer(camera, renderer);
+bridgeTiles.setResolutionFromRenderer(camera, renderer);
+
 waterTiles.addEventListener('load-model', ({ scene: model }) => {
   status.textContent = '水データ読み込み成功';
   model.traverse(object => {
@@ -144,6 +152,7 @@ function resize() {
   waterTiles.setResolutionFromRenderer(camera, renderer);
   vegetationTiles.setResolutionFromRenderer(camera, renderer);
   roadTiles.setResolutionFromRenderer(camera, renderer);
+  bridgeTiles.setResolutionFromRenderer(camera, renderer);
 }
 window.addEventListener('resize', resize);
 resize();
@@ -155,6 +164,7 @@ renderer.setAnimationLoop(() => {
   waterTiles.update();
   vegetationTiles.update();
   roadTiles.update();
+  bridgeTiles.update();
   renderer.render(scene, camera);
   if (loaded && !failed && renderer.info.render.triangles > 0) {
     status.textContent = `表示中 · ${renderer.info.render.triangles.toLocaleString()} 三角形`;

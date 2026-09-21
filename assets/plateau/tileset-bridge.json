@@ -1,0 +1,81 @@
+{
+	"asset" : {
+		"version" : "1.0"
+	},
+	"properties" : {
+		"meshcode" : {},
+		"feature_type" : {},
+		"city_code" : {},
+		"city_name" : {},
+		"gml_id" : {},
+		"attributes" : {},
+		"core:creationDate" : {},
+		"brid:class" : {},
+		"brid:function" : {},
+		"brid:yearOfConstruction" : {},
+		"uro:surveyYear" : {},
+		"uro:riskType" : {},
+		"uro:status" : {},
+		"uro:referenceDate" : {},
+		"uro:geometrySrcDescLod1" : {},
+		"uro:lodType" : {}
+	},
+	"geometricError" : 1614.551155971609,
+	"root" : {
+		"boundingVolume" : {
+			"region" : [ 2.438989137736907, 0.6229218583620267, 2.4395493249153066, 0.6231834125886777, 35.98521979257159, 60.150355312187145 ]
+		},
+		"geometricError" : 1614.551155971609,
+		"refine" : "REPLACE",
+		"content" : {
+			"boundingVolume" : {
+				"region" : [ 2.438989137736907, 0.6229218583620267, 2.4395493249153066, 0.6231834125886777, 35.98521979257159, 60.150355312187145 ]
+			},
+			"uri" : "data/bridge/data3.b3dm"
+		},
+		"children" : [
+			{
+				"boundingVolume" : {
+					"region" : [ 2.438989137736907, 0.6229294391419156, 2.439269231326107, 0.6231834125886777, 35.98521979257159, 60.150355312187145 ]
+				},
+				"geometricError" : 0,
+				"refine" : "REPLACE",
+				"content" : {
+					"boundingVolume" : {
+						"region" : [ 2.438989137736907, 0.6229294391419156, 2.439257352186196, 0.6231834125886777, 35.98521979257159, 60.150355312187145 ]
+					},
+					"uri" : "data/bridge/data0.b3dm"
+				},
+				"children" : []
+			},
+			{
+				"boundingVolume" : {
+					"region" : [ 2.439269231326107, 0.6229218583620267, 2.4395493249153066, 0.6231311721634364, 38.35508108008174, 51.86199489485547 ]
+				},
+				"geometricError" : 0,
+				"refine" : "REPLACE",
+				"content" : {
+					"boundingVolume" : {
+						"region" : [ 2.4395283409739337, 0.6229218583620267, 2.4395493249153066, 0.6231311721634364, 38.35508108008174, 51.86199489485547 ]
+					},
+					"uri" : "data/bridge/data1.b3dm"
+				},
+				"children" : []
+			},
+			{
+				"boundingVolume" : {
+					"region" : [ 2.438989137736907, 0.6229218583620267, 2.439269231326107, 0.6230526354753522, 36.22300221239097, 51.75461363959 ]
+				},
+				"geometricError" : 0,
+				"refine" : "REPLACE",
+				"content" : {
+					"boundingVolume" : {
+						"region" : [ 2.439202876447798, 0.6229237949980334, 2.439249711447854, 0.6229327478214043, 36.22300221239097, 51.75461363959 ]
+					},
+					"uri" : "data/bridge/data2.b3dm"
+				},
+				"children" : []
+			}
+		]
+	}
+}
