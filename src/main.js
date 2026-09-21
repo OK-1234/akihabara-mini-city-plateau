@@ -25,6 +25,22 @@ renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1
 renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.domElement.setAttribute('aria-label','秋葉原ミニシティ 街の骨格');
 document.body.append(renderer.domElement);
+const whiteFade = document.createElement('div');
+
+Object.assign(whiteFade.style, {
+  position: 'fixed',
+  inset: '0',
+  background: '#ffffff',
+  opacity: '1',
+  pointerEvents: 'none',
+  zIndex: '9999'
+});
+
+document.body.appendChild(whiteFade);
+requestAnimationFrame(() => {
+  whiteFade.style.transition = 'opacity 1.8s ease-in-out';
+  whiteFade.style.opacity = '0';
+});
 scene.add(new THREE.HemisphereLight(0xf4f8ff,0xb5ada0,2.2));
 const sun=new THREE.DirectionalLight(0xfff5e7,3);sun.position.set(-15,30,20);sun.castShadow=true;
 sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-25,right:25,top:25,bottom:-25,near:.1,far:100});sun.shadow.normalBias=.015;scene.add(sun);

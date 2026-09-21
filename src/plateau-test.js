@@ -264,6 +264,7 @@ renderer.domElement.addEventListener('click', () => {
 
         cameraMoving = false;
         console.log('STATION ZOOM COMPLETE');
+        window.location.href = '/';
       }
     }
 
