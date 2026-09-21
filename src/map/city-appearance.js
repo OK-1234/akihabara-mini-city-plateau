@@ -123,7 +123,7 @@ function stationRoof(scene) {
   for(let i=0;i<=segments;i++)for(const z of [-depth/2,depth/2])vertices.push(...point(i,z).toArray());
   for(let i=0;i<segments;i++){const a=i*2;indices.push(a,a+1,a+2,a+1,a+3,a+2);}
   const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geometry.setIndex(indices);geometry.computeVertexNormals();
-  const shell=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({color:0x799fb7,roughness:.6,transparent:true,opacity:.56,depthWrite:false,side:THREE.DoubleSide}));
+  const shell=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({color:0x628eac,roughness:.6,transparent:true,opacity:.56,depthWrite:false,side:THREE.DoubleSide}));
   shell.name='light-arch-shell';root.add(shell);
   for(const z of [-depth/2,0,depth/2]) {
     const curve=new THREE.CatmullRomCurve3(Array.from({length:segments+1},(_,i)=>point(i,z)));
@@ -131,6 +131,36 @@ function stationRoof(scene) {
   }
   for(const x of [-3.65,3.65])for(const z of [-1.72,1.72])box(root,.09,3,.09,x,ELEVATION+1.5,z,GRAY,'roof-post');
   return root;
+}
+
+function stationPlatform(scene,station) {
+  // Fit the added platform to the existing train envelope and station rear edge.
+  // The station roof/parapets, track, train and arch remain in place.
+  const train=scene.getObjectByName('horizontal-two-car-train');
+  scene.updateMatrixWorld(true);
+  const trainBounds=new THREE.Box3().setFromObject(train,true);
+  const junction=(Z_EDGES[10]+Z_EDGES[11])/2;
+  const inner=trainBounds.max.z+.12;
+  const body=station.getObjectByName('station:body');
+  const outer=station.position.z-body.geometry.parameters.depth/2-.25;
+  const length=7.0,width=outer-inner,top=ELEVATION+.55;
+  const platform=new THREE.Group();platform.name='station-platform';scene.add(platform);
+  platform.userData.dimensions={length,width,innerZ:inner,outerZ:outer,top,trackCenterZ:junction};
+  box(platform,length,.22,width,0,top-.11,(inner+outer)/2,0xd5d6cf,'platform-floor');
+  box(platform,length-.12,.012,.09,0,top+.006,inner+.13,0xe7bd4f,'platform-yellow-line');
+  // Fence on the station side and ends; the boarding edge stays open.
+  const fence=0x8b9fa7,rear=outer-.045;
+  for(let i=0;i<=10;i++)box(platform,.045,.5,.045,-length/2+.07+i*(length-.14)/10,top+.25,rear,fence,'platform-fence-post');
+  for(const y of [.22,.48]) {
+    box(platform,length-.1,.035,.035,0,top+y,rear,fence,'platform-fence-rail');
+    for(const x of [-length/2+.04,length/2-.04])box(platform,.035,.035,width-.24,x,top+y,(inner+.2+rear)/2,fence,'platform-end-rail');
+  }
+  for(const x of [-length/2+.04,length/2-.04])box(platform,.045,.5,.045,x,top+.25,inner+.2,fence,'platform-end-post');
+  // One modest bench, clear of the safety line and central boarding space.
+  const benchZ=outer-.3;
+  box(platform,1.1,.07,.3,2,top+.3,benchZ,0xb89b7a,'platform-bench-seat');
+  box(platform,1.1,.22,.045,2,top+.48,benchZ+.13,0xb89b7a,'platform-bench-back');
+  for(const x of [1.6,2.4])box(platform,.06,.27,.22,x,top+.135,benchZ,fence,'platform-bench-leg');
 }
 
 export function applyCityAppearance(root,bodies,configs,scene) {
@@ -188,6 +218,7 @@ export function applyCityAppearance(root,bodies,configs,scene) {
     }
   });
   stationRoof(scene);
+  stationPlatform(scene,root.getObjectByName('station'));
 }
 
 export function addCityGreenery(scene) {
