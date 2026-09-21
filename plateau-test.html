@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>秋葉原 PLATEAU LOD1 表示確認</title>
+  <style>
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#dce5ec;font-family:system-ui,sans-serif}
+    canvas{display:block}
+    aside{position:fixed;top:16px;left:16px;padding:12px 16px;background:#ffffffeb;border-radius:8px;color:#263440;font-size:13px;pointer-events:none;max-width:calc(100% - 64px)}
+    h1{font-size:16px;margin:0 0 8px}p{margin:5px 0}#status[data-error]{color:#b42318}
+  </style>
+  <script type="importmap">
+    {"imports":{
+      "three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+      "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+      "three/examples/jsm/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+      "3d-tiles-renderer":"https://cdn.jsdelivr.net/npm/3d-tiles-renderer@0.4.28/build/index.three.js"
+    }}
+  </script>
+</head>
+<body>
+  <aside>
+    <h1>秋葉原 PLATEAU / 建築物 LOD1</h1>
+    <p>左ドラッグ：回転 · ホイール：ズーム · 右ドラッグ：平行移動</p>
+    <p id="status" role="status">ライブラリを読み込み中…</p>
+  </aside>
+  <script type="module">
+    import('./src/plateau-test.js').catch(error => {
+      const status = document.querySelector('#status');
+      status.dataset.error = 'true';
+      status.textContent = `起動失敗：${error.message}（CDNへの接続を確認してください）`;
+      console.error(error);
+    });
+  </script>
+</body>
+</html>

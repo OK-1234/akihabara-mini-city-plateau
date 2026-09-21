@@ -1,0 +1,23 @@
+{
+  "asset": {
+    "version": "1.0"
+  },
+  "geometricError": 0,
+  "root": {
+    "boundingVolume": {
+      "region": [
+        2.4377309404759355,
+        0.6229366541657163,
+        2.4397673161448696,
+        0.6233526278196249,
+        36.684573122668596,
+        60.1654615877453
+      ]
+    },
+    "geometricError": 0,
+    "refine": "REPLACE",
+    "content": {
+      "uri": "data/water/data73.b3dm"
+    }
+  }
+}

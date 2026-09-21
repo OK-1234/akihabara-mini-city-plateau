@@ -1,0 +1,23 @@
+{
+  "asset": {
+    "version": "1.0"
+  },
+  "geometricError": 0,
+  "root": {
+    "boundingVolume": {
+      "region": [
+        2.439437888964765,
+        0.6230131085401099,
+        2.439669520160431,
+        0.6231729323767294,
+        36.123111589070525,
+        171.79204084550247
+      ]
+    },
+    "geometricError": 0,
+    "refine": "REPLACE",
+    "content": {
+      "uri": "data/building/data0.b3dm"
+    }
+  }
+}
