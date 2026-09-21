@@ -24,7 +24,7 @@ controls.target.set(0, 35, 0);
 controls.enableDamping = true;
 controls.minDistance = 20;
 controls.maxDistance = 6000;
-controls.maxPolarAngle = Math.PI * 0.49;
+controls.maxPolarAngle = Math.PI / 2;
 scene.add(new THREE.HemisphereLight(0xffffff, 0x727984, 2.2));
 const sunlight = new THREE.DirectionalLight(0xfff5e8, 2.8);
 sunlight.position.set(-500, 1000, 350);
@@ -99,11 +99,11 @@ bridgeTiles.setResolutionFromRenderer(camera, renderer);
 
 waterTiles.addEventListener('load-model', ({ scene: model }) => {
   status.textContent = '水データ読み込み成功';
-  
+
   model.traverse(object => {
     if (!object.isMesh) return;
     object.material = new THREE.MeshStandardMaterial({
-      color:  0x8fd3ff,
+      color: 0x8fd3ff,
       roughness: 0.8
     });
   });
@@ -162,7 +162,7 @@ tiles.addEventListener('load-model', ({ scene: model }) => {
     center.applyMatrix4(localToECEF.clone().invert());
 
     console.log('BUILDING', center.x.toFixed(1), center.z.toFixed(1));
-    
+
   });
 
   loaded = true;
@@ -211,9 +211,125 @@ renderer.domElement.addEventListener('pointermove', event => {
   }
 });
 
+let cameraMoving = false;
+
+renderer.domElement.addEventListener('click', () => {
+  if (!buildingMesh || cameraMoving) return;
+
+  const hits = raycaster.intersectObject(buildingMesh, true);
+  if (hits.length === 0) return;
+
+  cameraMoving = true;
+  controls.enabled = false;
+
+  const startPosition = camera.position.clone();
+  const startTarget = controls.target.clone();
+
+  // 完成済みのゴール
+  const endPosition = new THREE.Vector3(0, 700, 0);
+  const endTarget = new THREE.Vector3(0, 0, 0);
+
+  // 画面の左右回転は途中で行わない
+  const currentUp = camera.up.clone();
+  const endUp = new THREE.Vector3(0.09, 0, -1).normalize();
+
+  const startTime = performance.now();
+  const duration = 1800;
+
+  function moveCamera(now) {
+    const t = Math.min((now - startTime) / duration, 1);
+
+    // ゆっくり始まり、ゆっくり止まる
+    const smooth = t * t * (3 - 2 * t);
+
+    // 上昇しながら秋葉原駅の真上へ近づく
+    camera.position.lerpVectors(
+      startPosition,
+      endPosition,
+      smooth
+    );
+
+    // 視線も徐々に秋葉原駅へ
+    controls.target.lerpVectors(
+      startTarget,
+      endTarget,
+      smooth
+    );
+
+    camera.up.copy(currentUp);
+
+    if (t < 1) {
+      camera.lookAt(controls.target);
+    } else {
+      // 真上では up と視線が平行になるため lookAt で姿勢を作り直さない。
+      // 直前の画面の向きを保ち、残った傾きだけを真下へ合わせる。
+      const viewDirection = camera.getWorldDirection(new THREE.Vector3());
+      const arrivalRotation = new THREE.Quaternion().setFromUnitVectors(
+        viewDirection,
+        new THREE.Vector3(0, -1, 0)
+      );
+      camera.quaternion.premultiply(arrivalRotation);
+    }
+    camera.updateMatrixWorld(true);
+
+    if (t < 1) {
+      requestAnimationFrame(moveCamera);
+    } else {
+      // ゴール位置
+      camera.position.copy(endPosition);
+      controls.target.copy(endTarget);
+
+      // 到着時の姿勢を保存
+      // 真上に到着した瞬間の見た目を、そのまま開始姿勢にする
+      const startQuaternion = camera.quaternion.clone();
+
+      // 最終姿勢はコピー上だけで計算し、表示中のカメラには触れない。
+      const endCamera = camera.clone();
+      endCamera.up.copy(endUp);
+      endCamera.lookAt(endTarget);
+      const endQuaternion = endCamera.quaternion.clone();
+
+      const rotateStartTime = performance.now();
+      const rotateDuration = 1800;
+
+      function rotateMap(now) {
+        const t = Math.min((now - rotateStartTime) / rotateDuration, 1);
+
+        // ゆっくり始まり、ゆっくり止まる
+        const smooth = t * t * (3 - 2 * t);
+
+        // 到着した瞬間の見た目から、そのまま回転
+        camera.quaternion.slerpQuaternions(
+          startQuaternion,
+          endQuaternion,
+          smooth
+        );
+
+        camera.updateMatrixWorld(true);
+
+        if (t < 1) {
+          requestAnimationFrame(rotateMap);
+        } else {
+          camera.quaternion.copy(endQuaternion);
+          camera.up.copy(endUp);
+          camera.updateMatrixWorld(true);
+
+          cameraMoving = false;
+        }
+      }
+
+      requestAnimationFrame(rotateMap);
+    }
+  }
+
+  requestAnimationFrame(moveCamera);
+});
 
 renderer.setAnimationLoop(() => {
-  controls.update();
+  if (!cameraMoving && controls.enabled) {
+    controls.update();
+  }
+
   camera.updateMatrixWorld();
   scene.updateMatrixWorld(true);
   tiles.update();
