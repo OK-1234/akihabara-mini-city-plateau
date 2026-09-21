@@ -11,6 +11,18 @@ scene.background = new THREE.Color(0xdce5ec);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
+const whiteFade = document.createElement('div');
+
+Object.assign(whiteFade.style, {
+  position: 'fixed',
+  inset: '0',
+  background: '#ffffff',
+  opacity: '0',
+  pointerEvents: 'none',
+  zIndex: '9999'
+});
+
+document.body.appendChild(whiteFade);
 const camera = new THREE.PerspectiveCamera(45, 1, 1, 20000);
 camera.position.set(650, 700, 850);
 
@@ -212,8 +224,53 @@ renderer.domElement.addEventListener('pointermove', event => {
 });
 
 let cameraMoving = false;
+let overheadReady = false;
 
 renderer.domElement.addEventListener('click', () => {
+  if (overheadReady) {
+    overheadReady = false;
+    cameraMoving = true;
+
+    const startPosition = camera.position.clone();
+
+    // 真上の向きを維持したまま、秋葉原駅へ近づく
+    const endPosition = new THREE.Vector3(0, 180, 0);
+
+    const startTime = performance.now();
+    const duration = 1800;
+
+    function zoomToStation(now) {
+      const t = Math.min((now - startTime) / duration, 1);
+      const smooth = t * t * (3 - 2 * t);
+      // ズーム途中から白くなり、到着時には完全な白
+      const fadeStart = 0.35;
+      const fadeProgress = Math.max(0, (t - fadeStart) / (1 - fadeStart));
+
+      whiteFade.style.opacity = String(fadeProgress);
+
+      camera.position.lerpVectors(
+        startPosition,
+        endPosition,
+        smooth
+      );
+
+      camera.updateMatrixWorld(true);
+
+      if (t < 1) {
+        requestAnimationFrame(zoomToStation);
+      } else {
+        camera.position.copy(endPosition);
+        camera.updateMatrixWorld(true);
+
+        cameraMoving = false;
+        console.log('STATION ZOOM COMPLETE');
+      }
+    }
+
+    requestAnimationFrame(zoomToStation);
+    return;
+  }
+
   if (!buildingMesh || cameraMoving) return;
 
   const hits = raycaster.intersectObject(buildingMesh, true);
@@ -315,6 +372,7 @@ renderer.domElement.addEventListener('click', () => {
           camera.updateMatrixWorld(true);
 
           cameraMoving = false;
+          overheadReady = true;
         }
       }
 
