@@ -6,19 +6,305 @@
   "root": {
     "boundingVolume": {
       "region": [
-        2.439471430470046,
-        0.6230374211104155,
-        2.4395196072407592,
-        0.6230730663892269,
-        39.6265146693436,
-        40.967036135424095
+        2.4393893067856673,
+        0.6230085348118721,
+        2.439558221331358,
+        0.623147627459561,
+        39.204107403819876,
+        47.88452752442634
       ]
     },
-    "geometricError": 0,
+    "geometricError": 100,
     "refine": "REPLACE",
-    "content": {
-      "uri": "data/road/data16.b3dm"
-    },
-    "children": []
+    "children": [
+      {
+        "boundingVolume": {
+          "region": [
+            2.439511012785464,
+            0.6231182677776438,
+            2.439558221331358,
+            0.623147627459561,
+            39.234183209612056,
+            40.1130244432727
+          ]
+        },
+        "geometricError": 0,
+        "refine": "REPLACE",
+        "content": {
+          "uri": "data/road/data3.b3dm"
+        },
+        "children": []
+      },
+      {
+        "boundingVolume": {
+          "region": [
+            2.439472285768372,
+            0.6231196974981138,
+            2.4395163065889447,
+            0.623147627459561,
+            39.84225160823261,
+            40.53067877596107
+          ]
+        },
+        "geometricError": 0,
+        "refine": "REPLACE",
+        "content": {
+          "uri": "data/road/data4.b3dm"
+        },
+        "children": []
+      },
+      {
+        "boundingVolume": {
+          "region": [
+            2.439431924774314,
+            0.6231169616228603,
+            2.439474391846531,
+            0.623147627459561,
+            40.27082817124277,
+            41.888696807923075
+          ]
+        },
+        "geometricError": 0,
+        "refine": "REPLACE",
+        "content": {
+          "uri": "data/road/data7.b3dm"
+        },
+        "children": []
+      },
+      {
+        "boundingVolume": {
+          "region": [
+            2.4395163065889447,
+            0.6230915870237117,
+            2.439558221331358,
+            0.6231201683910397,
+            39.23374443615488,
+            40.476590664131685
+          ]
+        },
+        "geometricError": 0,
+        "refine": "REPLACE",
+        "content": {
+          "uri": "data/road/data10.b3dm"
+        },
+        "children": []
+      },
+      {
+        "boundingVolume": {
+          "region": [
+            2.439470696002879,
+            0.6230755620330115,
+            2.4395204410736677,
+            0.6231228049853088,
+            39.70126678106992,
+            40.9461465568602
+          ]
+        },
+        "geometricError": 0,
+        "refine": "REPLACE",
+        "content": {
+          "uri": "data/road/data11.b3dm"
+        },
+        "children": []
+      },
+      {
+        "boundingVolume": {
+          "region": [
+            2.4395163065889447,
+            0.6230635714350666,
+            2.439558221331358,
+            0.6230937458595499,
+            39.204107403819876,
+            39.99957136994192
+          ]
+        },
+        "geometricError": 0,
+        "refine": "REPLACE",
+        "content": {
+          "uri": "data/road/data12.b3dm"
+        },
+        "children": []
+      },
+      {
+        "boundingVolume": {
+          "region": [
+            2.43947343754899,
+            0.6230649726977019,
+            2.439519757417116,
+            0.6230925242849882,
+            39.72418029881655,
+            40.269554078483445
+          ]
+        },
+        "geometricError": 0,
+        "refine": "REPLACE",
+        "content": {
+          "uri": "data/road/data13.b3dm"
+        },
+        "children": []
+      },
+      {
+        "boundingVolume": {
+          "region": [
+            2.439514034847716,
+            0.6230359923280074,
+            2.439558221331358,
+            0.6230681020395193,
+            39.428396445145275,
+            40.65852267676347
+          ]
+        },
+        "geometricError": 0,
+        "refine": "REPLACE",
+        "content": {
+          "uri": "data/road/data15.b3dm"
+        },
+        "children": []
+      },
+      {
+        "boundingVolume": {
+          "region": [
+            2.439471430470046,
+            0.6230374211104155,
+            2.4395196072407592,
+            0.6230730663892269,
+            39.6265146693436,
+            40.967036135424095
+          ]
+        },
+        "geometricError": 0,
+        "refine": "REPLACE",
+        "content": {
+          "uri": "data/road/data16.b3dm"
+        },
+        "children": []
+      },
+      {
+        "boundingVolume": {
+          "region": [
+            2.4395163065889447,
+            0.6230085348118721,
+            2.439558221331358,
+            0.6230383729972534,
+            40.05045178941311,
+            41.42574299326817
+          ]
+        },
+        "geometricError": 0,
+        "refine": "REPLACE",
+        "content": {
+          "uri": "data/road/data17.b3dm"
+        },
+        "children": []
+      },
+      {
+        "boundingVolume": {
+          "region": [
+            2.4394705212761663,
+            0.6230093223115274,
+            2.4395203486541894,
+            0.6230379719312047,
+            39.69754264557358,
+            42.998792212382725
+          ]
+        },
+        "geometricError": 0,
+        "refine": "REPLACE",
+        "content": {
+          "uri": "data/road/data18.b3dm"
+        },
+        "children": []
+      },
+      {
+        "boundingVolume": {
+          "region": [
+            2.4394313199162805,
+            0.623090878257567,
+            2.4394778126746712,
+            0.6231207180278351,
+            40.07965238191954,
+            42.157510223292896
+          ]
+        },
+        "geometricError": 0,
+        "refine": "REPLACE",
+        "content": {
+          "uri": "data/road/data21.b3dm"
+        },
+        "children": []
+      },
+      {
+        "boundingVolume": {
+          "region": [
+            2.4394304394724333,
+            0.6230649726977019,
+            2.439476427637258,
+            0.6230964126258814,
+            39.80886180732391,
+            42.11610669707862
+          ]
+        },
+        "geometricError": 0,
+        "refine": "REPLACE",
+        "content": {
+          "uri": "data/road/data23.b3dm"
+        },
+        "children": []
+      },
+      {
+        "boundingVolume": {
+          "region": [
+            2.4394317039292184,
+            0.6230374211104155,
+            2.439476198547796,
+            0.6230671061133725,
+            39.694938659713905,
+            41.553468970557915
+          ]
+        },
+        "geometricError": 0,
+        "refine": "REPLACE",
+        "content": {
+          "uri": "data/road/data30.b3dm"
+        },
+        "children": []
+      },
+      {
+        "boundingVolume": {
+          "region": [
+            2.4393893067856673,
+            0.6230374211104155,
+            2.439439981556063,
+            0.6230649726977019,
+            39.94875234914468,
+            47.88452752442634
+          ]
+        },
+        "geometricError": 0,
+        "refine": "REPLACE",
+        "content": {
+          "uri": "data/road/data31.b3dm"
+        },
+        "children": []
+      },
+      {
+        "boundingVolume": {
+          "region": [
+            2.4394304700764113,
+            0.6230098695231291,
+            2.4394760668739064,
+            0.623040850246186,
+            40.544645161681935,
+            41.87952871508439
+          ]
+        },
+        "geometricError": 0,
+        "refine": "REPLACE",
+        "content": {
+          "uri": "data/road/data32.b3dm"
+        },
+        "children": []
+      }
+    ]
   }
 }

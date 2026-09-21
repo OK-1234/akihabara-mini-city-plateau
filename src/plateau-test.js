@@ -80,6 +80,9 @@ tiles.setCamera(camera);
 waterTiles.setCamera(camera);
 vegetationTiles.setCamera(camera);
 roadTiles.setCamera(camera);
+roadTiles.setResolutionFromRenderer(camera, renderer);
+waterTiles.setResolutionFromRenderer(camera, renderer);
+vegetationTiles.setResolutionFromRenderer(camera, renderer);
 waterTiles.addEventListener('load-model', ({ scene: model }) => {
   status.textContent = '水データ読み込み成功';
   model.traverse(object => {
@@ -136,7 +139,11 @@ function resize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+
   tiles.setResolutionFromRenderer(camera, renderer);
+  waterTiles.setResolutionFromRenderer(camera, renderer);
+  vegetationTiles.setResolutionFromRenderer(camera, renderer);
+  roadTiles.setResolutionFromRenderer(camera, renderer);
 }
 window.addEventListener('resize', resize);
 resize();
