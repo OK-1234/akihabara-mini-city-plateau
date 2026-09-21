@@ -13,6 +13,12 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
 const camera = new THREE.PerspectiveCamera(45, 1, 1, 20000);
 camera.position.set(650, 700, 850);
+
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let buildingMesh = null;
+let originalBuildingMaterial = null;
+
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 35, 0);
 controls.enableDamping = true;
@@ -93,6 +99,7 @@ bridgeTiles.setResolutionFromRenderer(camera, renderer);
 
 waterTiles.addEventListener('load-model', ({ scene: model }) => {
   status.textContent = '水データ読み込み成功';
+  
   model.traverse(object => {
     if (!object.isMesh) return;
     object.material = new THREE.MeshStandardMaterial({
@@ -129,11 +136,35 @@ let failed = false;
 let loaded = false;
 tiles.addEventListener('load-model', ({ scene: model }) => {
   let triangles = 0;
+
+  model.updateMatrixWorld(true);
+
   model.traverse(object => {
     if (!object.isMesh) return;
+    buildingMesh = object;
+    originalBuildingMaterial = object.material;
+    console.log('MESH INFO', object.name, object.geometry.groups.length);
+
     const geometry = object.geometry;
-    triangles += (geometry.index ? geometry.index.count : geometry.attributes.position.count) / 3;
+    triangles +=
+      (geometry.index ? geometry.index.count : geometry.attributes.position.count) / 3;
+
+
+    geometry.computeBoundingBox();
+
+    const center = new THREE.Vector3();
+    geometry.boundingBox.getCenter(center);
+
+    // B3DM内部座標 → ECEF座標
+    center.applyMatrix4(object.matrixWorld);
+
+    // ECEF座標 → 秋葉原を原点としたローカル座標
+    center.applyMatrix4(localToECEF.clone().invert());
+
+    console.log('BUILDING', center.x.toFixed(1), center.z.toFixed(1));
+    
   });
+
   loaded = true;
   status.textContent = `読み込み完了 · ${triangles.toLocaleString()} 三角形`;
 });
@@ -156,6 +187,31 @@ function resize() {
 }
 window.addEventListener('resize', resize);
 resize();
+
+// 建物にマウスを乗せたときだけ青くする
+renderer.domElement.addEventListener('pointermove', event => {
+  if (!buildingMesh) return;
+
+  const rect = renderer.domElement.getBoundingClientRect();
+
+  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+
+  const hits = raycaster.intersectObject(buildingMesh, true);
+
+  if (hits.length > 0) {
+    buildingMesh.material = new THREE.MeshStandardMaterial({
+      color: 0x4da6ff,
+      roughness: 0.8
+    });
+  } else {
+    buildingMesh.material = originalBuildingMaterial;
+  }
+});
+
+
 renderer.setAnimationLoop(() => {
   controls.update();
   camera.updateMatrixWorld();
