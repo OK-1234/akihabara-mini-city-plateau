@@ -5,7 +5,7 @@ import { createWalking } from './walking.js';
 import { cellCenter, constrainPosition } from '../map/world.js';
 export const PLAYER_SCALE = 0.45;
 export async function createPlayer(scene,camera) {
-  const gltf=await new GLTFLoader().loadAsync(new URL('../../assets/characters/tanuki/tanuki_brown_v2.glb', import.meta.url).href);
+  const gltf=await new GLTFLoader().loadAsync(new URL('../../assets/characters/tanuki/tanuki_bevel2_smooth_head_body.glb', import.meta.url).href);
   const model=gltf.scene;
   const tanuki=model.getObjectByName('Tanuki_茶タヌキ全体');
   if(!tanuki) throw new Error('茶タヌキv2が見つかりません');
