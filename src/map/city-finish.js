@@ -11,8 +11,8 @@ export function finishCity(scene) {
   const plazaTiles=world.children.filter(o=>/:(plaza|fountainReserve)$/.test(o.name));
   // Procedural paving texture: muted concentric courses, staggered stone joints.
   const canvas=document.createElement('canvas');canvas.width=canvas.height=1024;const ctx=canvas.getContext('2d');
-  const stoneColors=['#c7cecf','#d8d9d3','#cbd3d8','#deded7','#cfd4d3'];
-  ctx.fillStyle='#bdc6c7';ctx.fillRect(0,0,1024,1024);ctx.translate(512,512);
+  const stoneColors=['#ded4bf','#e8dfcc','#d8cebb','#eee5d3','#e1d8c5'];
+  ctx.fillStyle='#b9b09e';ctx.fillRect(0,0,1024,1024);ctx.translate(512,512);
   for(let ring=0;ring<17;ring++){
     const inner=ring*48,outer=inner+48,count=Math.max(8,Math.round((inner+24)/13)),step=Math.PI*2/count;
     for(let i=0;i<count;i++){
@@ -24,7 +24,7 @@ export function finishCity(scene) {
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=4;
   const paving=new THREE.MeshStandardMaterial({map:texture,roughness:1});
   for(const tile of plazaTiles){
-    tile.material=mat(0xcdd3d4);const p=tile.geometry.parameters;
+    tile.material=mat(0xded4bf);const p=tile.geometry.parameters;
     const g=new THREE.PlaneGeometry(p.width,p.depth);g.rotateX(-Math.PI/2);
     const pos=g.attributes.position,uv=g.attributes.uv;
     for(let i=0;i<pos.count;i++)uv.setXY(i,(pos.getX(i)+tile.position.x+7)/14,(pos.getZ(i)+tile.position.z-9.3)/14);
@@ -51,12 +51,20 @@ export function finishCity(scene) {
   }
   // A few selected passages only: staggered pale stone, at consistent world scale.
   const stoneCanvas=document.createElement('canvas');stoneCanvas.width=stoneCanvas.height=256;
-  const sc=stoneCanvas.getContext('2d');sc.fillStyle='#cdd2d1';sc.fillRect(0,0,256,256);
+  const sc=stoneCanvas.getContext('2d');sc.fillStyle='#aaa79f';sc.fillRect(0,0,256,256);
   for(let row=0;row<8;row++)for(let col=-1;col<5;col++){
-    sc.fillStyle=stoneColors[((row*3+col*7)%5+5)%5];sc.fillRect(col*64+(row%2)*32+1,row*32+1,62,30);
+    sc.fillStyle=['#c3beb3','#ccc7bd','#bcb8af','#d0cabf','#c6c0b5'][((row*3+col*7)%5+5)%5];sc.fillRect(col*64+(row%2)*32+1,row*32+1,62,30);
   }
   const stoneTexture=new THREE.CanvasTexture(stoneCanvas);stoneTexture.colorSpace=THREE.SRGBColorSpace;stoneTexture.wrapS=stoneTexture.wrapT=THREE.RepeatWrapping;stoneTexture.anisotropy=4;
   const passageMaterial=new THREE.MeshStandardMaterial({map:stoneTexture,roughness:1});
+  const walkingSpaceMaterial=new THREE.MeshStandardMaterial({map:stoneTexture,color:0xfff3dc,roughness:1});
+  // Surface colours only: retain every existing tile, boundary and height.
+  const plotMaterial=mat(0xb0bfca),sidewalkEdge=mat(0xaaa99f);
+  for(const tile of world.children){
+    if(/:(plot|supportPlot|udxPlot|yodobashiPlot)$/.test(tile.name))tile.material=plotMaterial;
+    else if(tile.name.endsWith(':sidewalk'))tile.material=sidewalkEdge;
+    else if(/:(empty|station-rear-space)$/.test(tile.name)&&tile.position.z>=Z_EDGES[3])tile.material=mat(0xe0d6c2);
+  }
   for(const [x,z,w,d] of [[7,16.55,.85,5.6],[-8,14.45,3.65,.65],[2.9,-6.35,1.25,9.3]]){
     const g=new THREE.PlaneGeometry(w,d);g.rotateX(-Math.PI/2);const uv=g.attributes.uv;
     for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*w/2,uv.getY(i)*d/2);
@@ -70,7 +78,7 @@ export function finishCity(scene) {
     const g=new THREE.PlaneGeometry(p.width,p.depth);g.rotateX(-Math.PI/2);
     const positions=g.attributes.position,uv=g.attributes.uv;
     for(let i=0;i<uv.count;i++)uv.setXY(i,(positions.getX(i)+tile.position.x)/2,(positions.getZ(i)+tile.position.z)/2);
-    const mesh=new THREE.Mesh(g,passageMaterial);mesh.position.set(tile.position.x,tile.position.y+p.height/2+.002,tile.position.z);
+    const mesh=new THREE.Mesh(g,tile.name.endsWith(':sidewalk')?passageMaterial:walkingSpaceMaterial);mesh.position.set(tile.position.x,tile.position.y+p.height/2+.002,tile.position.z);
     mesh.receiveShadow=true;mesh.name='pedestrian-stone-paving';root.add(mesh);
   }
   // Existing sidewalks already provide the colour/height edge; whiten lane markings.
@@ -95,9 +103,9 @@ export function finishCity(scene) {
   // Trim only the existing .85 sidewalk corner; straight carriageway widths stay intact.
   const cx=X_EDGES[12],cz=Z_EDGES[9],r=SIDEWALK_WIDTH;
   box(root,r,.02,r,cx+r/2,.021,cz+r/2,0x777f88,'junction-corner-asphalt');
-  const corner=new THREE.Shape();corner.moveTo(cx,-cz);corner.lineTo(cx+r,-cz);corner.absarc(cx,-cz,r,0,-Math.PI/2,true);corner.lineTo(cx,-cz);surface(corner,0xe0e1dc,.04,'rounded-junction-curb');
+  const corner=new THREE.Shape();corner.moveTo(cx,-cz);corner.lineTo(cx+r,-cz);corner.absarc(cx,-cz,r,0,-Math.PI/2,true);corner.lineTo(cx,-cz);surface(corner,0xc6c0b5,.04,'rounded-junction-curb');
   const points=Array.from({length:25},(_,i)=>{const a=i*Math.PI/2/24;return new THREE.Vector3(cx+r*Math.cos(a),.045,cz+r*Math.sin(a));});
-  const curb=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),24,.025,4,false),mat(0xc6cecf));curb.name='curved-curb-edge';root.add(curb);
+  const curb=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),24,.025,4,false),mat(0xaaa99f));curb.name='curved-curb-edge';root.add(curb);
 
   // A broad, low-frequency shore with the existing beach depth and both accesses.
   // Shared, world-space colour ripples keep all existing water tiles seamless.
