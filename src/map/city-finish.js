@@ -100,7 +100,36 @@ export function finishCity(scene) {
   const curb=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),24,.025,4,false),mat(0xc6cecf));curb.name='curved-curb-edge';root.add(curb);
 
   // A broad, low-frequency shore with the existing beach depth and both accesses.
-  for(const m of world.children){if(m.name.endsWith(':beach'))m.visible=false;if(m.name.includes(':sea')||m.name.startsWith('sea:'))m.material=mat(0x78c9da);}
+  // Shared, world-space colour ripples keep all existing water tiles seamless.
+  // Only one time uniform changes; no geometry updates or new animation loop.
+  const coastTime={value:0};
+  function coastalMaterial(material,kind){
+    material.onBeforeCompile=shader=>{
+      shader.uniforms.coastTime=coastTime;
+      shader.vertexShader='uniform float coastTime; varying vec2 coastXZ;\n'+shader.vertexShader;
+      shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+        ${kind==='foam'?'transformed.z += 0.025 * sin(coastTime * 0.38 + position.x * 0.23);':''}
+        coastXZ = (modelMatrix * vec4(transformed, 1.0)).xz;`);
+      shader.fragmentShader='uniform float coastTime; varying vec2 coastXZ;\n'+shader.fragmentShader;
+      shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+        ${kind==='water'?`
+          float swell = sin(coastXZ.x * 0.55 + coastXZ.y * 0.8 + coastTime * 0.12);
+          float ripple = sin(coastXZ.y * 2.1 + sin(coastXZ.x * 0.65) * 0.65 - coastTime * 0.18);
+          diffuseColor.rgb *= 1.0 + 0.09 * swell + 0.035 * ripple;
+          float glint = pow(max(ripple, 0.0), 12.0) * (0.5 + 0.5 * sin(coastXZ.x * 1.7));
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.82, 0.94, 0.95), glint * 0.07);
+        `:`
+          diffuseColor.a *= 0.86 + 0.12 * sin(coastTime * 0.38 + coastXZ.x * 0.23);
+          diffuseColor.a *= 0.90 + 0.10 * sin(coastXZ.x * 2.3);
+        `}
+      `);
+    };
+    material.customProgramCacheKey=()=> 'pastel-coast-'+kind;
+    return material;
+  }
+  const waterMaterial=coastalMaterial(new THREE.MeshStandardMaterial({color:0x78c9da,roughness:1,metalness:0}),'water');
+  const animateCoast=()=>{coastTime.value=performance.now()/1000;};
+  for(const m of world.children){if(m.name.endsWith(':beach'))m.visible=false;if(m.name.includes(':sea')||m.name.startsWith('sea:')){m.material=waterMaterial;m.onBeforeRender=animateCoast;}}
   // Broad unequal coves define the actual sand mesh, independently of the foam.
   const shore=x=>Z_EDGES[1]+.9+.95*Math.exp(-((x+8)**2)/30)-.7*Math.exp(-((x-2)**2)/22)+.55*Math.exp(-((x-12)**2)/16);
   const left=-WIDTH/2,right=WIDTH/2;
@@ -108,21 +137,67 @@ export function finishCity(scene) {
   for(let i=64;i>=0;i--){const x=left+(right-left)*i/64;beach.lineTo(x,-shore(x));}beach.closePath();
   const sand=surface(beach,0xede5d0,.025,'curved-ivory-beach');
   const sandCanvas=document.createElement('canvas');sandCanvas.width=sandCanvas.height=256;const sx=sandCanvas.getContext('2d');
-  sx.fillStyle='#eee7d6';sx.fillRect(0,0,256,256);
+  sx.fillStyle='#eee3ce';sx.fillRect(0,0,256,256);
   for(let i=0;i<14;i++){
     const x=(i*71)%256,y=(i*113)%256,g=sx.createRadialGradient(x,y,0,x,y,65);
-    g.addColorStop(0,i%2?'#e9e1cf':'#f2ecdf');g.addColorStop(1,'rgba(238,231,214,0)');sx.fillStyle=g;sx.fillRect(0,0,256,256);
+    g.addColorStop(0,i%2?'#ddcbae':'#f7edd8');g.addColorStop(1,'rgba(238,227,206,0)');sx.fillStyle=g;sx.fillRect(0,0,256,256);
   }
+  // Sparse low-contrast grains inside the existing 256px texture.
+  for(let i=0;i<180;i++){sx.fillStyle=i%2?'rgba(173,153,115,0.10)':'rgba(255,250,230,0.16)';sx.fillRect((i*71.37)%256,(i*113.19)%256,2,2);}
   const sandTexture=new THREE.CanvasTexture(sandCanvas);sandTexture.colorSpace=THREE.SRGBColorSpace;
   const sp=sand.geometry.attributes.position,suv=sand.geometry.attributes.uv;
   for(let i=0;i<sp.count;i++)suv.setXY(i,(sp.getX(i)+WIDTH/2)/WIDTH,(sp.getZ(i)-Z_EDGES[1])/6);
   sand.material=new THREE.MeshStandardMaterial({map:sandTexture,roughness:1});
-  box(root,WIDTH,.015,6,0,.007,(Z_EDGES[1]+Z_EDGES[2])/2,0x78c9da,'shore-water-underlay');
-  function ribbon(offset,width,color,name,start=left,end=right){const shape=new THREE.Shape();for(let i=0;i<=64;i++){const x=start+(end-start)*i/64;const z=shore(x)+offset;i?shape.lineTo(x,-z):shape.moveTo(x,-z);}for(let i=64;i>=0;i--){const x=start+(end-start)*i/64;shape.lineTo(x,-(shore(x)+offset+width));}shape.closePath();surface(shape,color,.032,name);}
-  ribbon(0,.30,0xe4ddca,'damp-sand');
-  // Broken, thin foam on the water side; no second continuous contour line.
-  ribbon(-.07,.05,0xe2f1ed,'shore-foam',-14,-5);
-  ribbon(-.13,.055,0xdaeeee,'shore-foam',-1,7.5);
-  ribbon(-.08,.045,0xe2f1ed,'shore-foam',11,15.8);
+  sand.material.onBeforeCompile=shader=>{
+    shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+      float sandMottle=sin(vMapUv.x*70.0+sin(vMapUv.y*8.0))*sin(vMapUv.y*17.0+sin(vMapUv.x*31.0));
+      diffuseColor.rgb *= 1.0+0.045*sandMottle;
+    `);
+  };
+  sand.material.customProgramCacheKey=()=> 'pastel-sand-mottle-v1';
+  const shoreWater=box(root,WIDTH,.015,6,0,.007,(Z_EDGES[1]+Z_EDGES[2])/2,0x78c9da,'shore-water-underlay');shoreWater.material=waterMaterial;shoreWater.onBeforeRender=animateCoast;
+  // One narrow shoreline mesh follows the unchanged sand contour. Its shader
+  // joins shallow water, broken foam and wet sand, instead of three thin lines.
+  const positions=[],coordinates=[],indices=[],segments=128;
+  for(let i=0;i<=segments;i++){
+    const x=left+(right-left)*i/segments;
+    for(const d of [-1.4,1.15]){positions.push(x,.038,shore(x)+d);coordinates.push(x,d);}
+    if(i<segments){const n=i*2;indices.push(n,n+1,n+2,n+1,n+3,n+2);}
+  }
+  const shoreGeometry=new THREE.BufferGeometry();
+  shoreGeometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  shoreGeometry.setAttribute('shoreCoord',new THREE.Float32BufferAttribute(coordinates,2));
+  shoreGeometry.setIndex(indices);shoreGeometry.computeVertexNormals();
+  const shoreMaterial=new THREE.MeshStandardMaterial({roughness:1,transparent:true,depthWrite:false});
+  shoreMaterial.onBeforeCompile=shader=>{
+    Object.assign(shader.uniforms,{coastTime,shallowColor:{value:new THREE.Color(0xa1d9d8)},washColor:{value:new THREE.Color(0xc1e5df)},wetColor:{value:new THREE.Color(0xd9c9aa)},foamColor:{value:new THREE.Color(0xf7fcf6)}});
+    shader.vertexShader='attribute vec2 shoreCoord; varying vec2 vShore;\n'+shader.vertexShader;
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvShore=shoreCoord;');
+    shader.fragmentShader='uniform float coastTime; uniform vec3 shallowColor, washColor, wetColor, foamColor; varying vec2 vShore;\n'+shader.fragmentShader;
+    shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+      float x=vShore.x, d=vShore.y;
+      float tide=0.13+0.15*sin(coastTime*0.42+x*0.16);
+      float edge=tide+0.075*sin(x*2.4)+0.035*sin(x*5.7+coastTime*0.14);
+      float behind=edge-d;
+      float film=1.0-smoothstep(-0.025,0.055,d-edge);
+      float shallow=smoothstep(-1.4,0.15,d);
+      vec3 water=mix(shallowColor,washColor,shallow);
+      vec3 wet=wetColor*(1.0+0.018*sin(x*3.0+d*8.0));
+      diffuseColor.rgb=mix(wet,water,film);
+      float thickness=0.11+0.08*(0.5+0.5*sin(x*3.8+sin(x)));
+      float rim=1.0-smoothstep(thickness*0.35,thickness,abs(d-edge));
+      float breaks=smoothstep(-0.7,0.2,sin(x*2.7)+0.45*sin(x*6.1));
+      rim*=0.25+0.75*breaks;
+      float lace=1.0-smoothstep(0.035,0.12,abs(sin(x*4.2+sin(d*7.0))*sin(d*8.0+sin(x*2.3)+coastTime*0.12)));
+      lace*=smoothstep(0.08,0.22,behind)*(1.0-smoothstep(0.5,0.95,behind))*0.32;
+      float foam=max(rim,lace);
+      diffuseColor.rgb=mix(diffuseColor.rgb,foamColor,foam);
+      float fade=smoothstep(-1.4,-0.95,d)*(1.0-smoothstep(0.5,1.15,d));
+      diffuseColor.a=fade*mix(0.42,0.78,film);
+      diffuseColor.a=mix(diffuseColor.a,0.96,foam*fade);
+    `);
+  };
+  shoreMaterial.customProgramCacheKey=()=> 'pastel-shore-wash-v1';
+  const shoreWash=new THREE.Mesh(shoreGeometry,shoreMaterial);shoreWash.name='shore-foam';shoreWash.receiveShadow=true;shoreWash.onBeforeRender=animateCoast;root.add(shoreWash);
   return root;
 }
