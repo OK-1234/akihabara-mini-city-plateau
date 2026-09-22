@@ -53,3 +53,107 @@
 `/tools/verify-sedan.html` で計測値、各寸法、接地、1台だけの置換、建物と電車の維持を確認可能。
 
 読み込み上の制約：GLBが参照する外部画像 `Textures/colormap.png` はプロジェクト内に存在せず、現在は白色表示。元の色は未再現。GLB原本は変更していない。
+
+## 使用技術・データ・素材
+
+本プロジェクトでは、以下のライブラリ、オープンデータ、3D素材および制作ツールを使用しています。
+
+### Three.js
+
+Webブラウザ上での3D描画に **Three.js 0.180.0** を使用しています。
+
+また、Three.jsの以下のアドオンを使用しています。
+
+- OrbitControls
+- GLTFLoader
+- DRACOLoader
+
+Three.jsおよび上記アドオンは、jsDelivr CDN経由で読み込んでいます。
+
+- License: MIT License
+- Copyright © three.js authors
+- 公式サイト: [https://threejs.org/](https://threejs.org/)
+- License: [https://threejs.org/license/](https://threejs.org/license/)
+
+### 3DTilesRendererJS
+
+Project PLATEAUの3D TilesデータをThree.js上で読み込み・表示するため、**3d-tiles-renderer 0.4.28（3DTilesRendererJS）** を使用しています。
+
+- 提供: NASA-AMMOS / 3DTilesRendererJS
+- License: Apache License 2.0
+- Copyright © 2020 California Institute of Technology
+- GitHub: [https://github.com/NASA-AMMOS/3DTilesRendererJS](https://github.com/NASA-AMMOS/3DTilesRendererJS)
+
+### Project PLATEAU
+
+本作品では、国土交通省 **Project PLATEAU** の3D都市モデルを使用しています。
+
+使用データ:
+
+- 3D都市モデル（Project PLATEAU）東京都千代田区（2025年度）
+- 形式: 3D Tiles, MVT（v5）
+- 配布元: G空間情報センター
+
+本作品では、上記3D都市モデルから秋葉原駅周辺のデータを抽出・加工して使用しています。
+
+PLATEAU Site Policyおよび公共データ利用規約（第1.0版）に基づき利用しています。
+
+- Project PLATEAU: [https://www.mlit.go.jp/plateau/](https://www.mlit.go.jp/plateau/)
+- Site Policy: [https://www.mlit.go.jp/plateau/site-policy/](https://www.mlit.go.jp/plateau/site-policy/)
+
+### Kenney
+
+ゲーム内の鉄道・車両モデルの一部に、KenneyがCC0で公開している3D素材を使用しています。
+
+#### Train Kit
+
+使用素材:
+
+- `track-detailed.glb`
+
+- `train-electric-square-a.glb`
+
+- License: Creative Commons CC0
+
+- 配布元: [https://kenney.nl/assets/train-kit](https://kenney.nl/assets/train-kit)
+
+#### Car Kit
+
+使用素材:
+
+- `sedan.glb`
+
+- `suv.glb`
+
+- `taxi.glb`
+
+- `police.glb`
+
+- License: Creative Commons CC0
+
+- 配布元: [https://kenney.nl/assets/car-kit](https://kenney.nl/assets/car-kit)
+
+### Blender / オリジナル3Dモデル
+
+プレイヤーキャラクターのタヌキは、**Blender 5.2.1** を使用して制作したオリジナル3Dモデルです。
+
+ゲームでは以下のモデルを使用しています。
+
+- `tanuki_bevel2_smooth_head_body.glb`
+
+外部から取得したタヌキモデルではなく、本プロジェクト用に制作したモデルです。
+
+- Blender: [https://www.blender.org/](https://www.blender.org/)
+
+## 第三者ライセンス
+
+本プロジェクトで使用している第三者のライブラリ、データおよび素材のライセンス・利用条件ならびに著作権表示については、[THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) を参照してください。
+
+## License
+
+本プロジェクトに含まれる第三者のライブラリ、データおよび素材には、それぞれの提供元が定めるライセンスおよび利用条件が適用されます。
+
+詳細は [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) を参照してください。
+
+それらを除く、本プロジェクト独自のソースコードおよびオリジナルコンテンツについては、オープンソースライセンスを付与していません。
+
