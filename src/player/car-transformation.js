@@ -1,10 +1,12 @@
 import * as THREE from 'three';
+import { createTransformationLabel } from './transformation-label.js';
 import { createOuterDriveRoute } from './outer-drive-route.js';
+import { createTransformationSmoke } from './transformation-smoke.js';
 
 export const CAR_SETTINGS={range:1.7,initialSpeed:5,maxSpeed:8,lowSpeed:.85,reverseSpeed:.35,reverseDistance:1.5,switchTime:.25,stopSpeed:0,duration:.65};
 
 // One reusable appearance; the parked car and all shared GLB materials stay intact.
-export function createCarTransformation(scene,player,camera,target) {
+export function createCarTransformation(scene,player,camera,target,isAvailable=()=>true) {
   const initial={position:target.position.clone(),quaternion:target.quaternion.clone(),visible:target.visible};
   target.updateWorldMatrix(true,true);
   const targetBounds=new THREE.Box3().setFromObject(target,true);
@@ -24,23 +26,8 @@ export function createCarTransformation(scene,player,camera,target) {
   leaf.position.set(-leafCenter.x,size.y+.04-leafBounds.min.y,-leafCenter.z);
   car.visible=false;
 
-  function label(text,thought=false) {
-    const canvas=document.createElement('canvas');canvas.width=512;canvas.height=256;
-    const ctx=canvas.getContext('2d');ctx.fillStyle='rgba(255,255,255,.96)';
-    if(thought) {
-      for(const [x,y,r] of [[130,109,52],[204,70,55],[290,65,55],[368,108,54],[255,125,86],[159,203,15],[139,231,8]]) {ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();}
-      ctx.textAlign='center';ctx.fillStyle='#bd3c39';ctx.font='bold 76px sans-serif';ctx.fillText('!',256,108);
-    } else {ctx.beginPath();ctx.roundRect(85,88,342,85,35);ctx.fill();}
-    ctx.fillStyle='#344047';ctx.textAlign='center';ctx.font='bold 33px sans-serif';ctx.fillText(text,256,thought?157:142);
-    const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
-    const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,depthTest:false,depthWrite:false}));
-    sprite.scale.set(2.25,1.125,1);sprite.renderOrder=20;scene.add(sprite);sprite.visible=false;return sprite;
-  }
-  const discover=label('E：化ける',true),revert=label('E：元に戻る');
-  const smoke=new THREE.Group();scene.add(smoke);smoke.visible=false;
-  const smokeMaterial=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,depthWrite:false});
-  const puffGeometry=new THREE.SphereGeometry(1,10,8);
-  for(let i=0;i<10;i++){const puff=new THREE.Mesh(puffGeometry,smokeMaterial);smoke.add(puff);}
+  const discover=createTransformationLabel(scene,'E：化ける',true),revert=createTransformationLabel(scene,'E：元に戻る');
+  const smokeEffect=createTransformationSmoke(scene),smoke=smokeEffect.root;
   const keys=new Set(),controls=new Set(['KeyW','KeyS','KeyA','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight']);
   let mode='walk',speed=0,heading=0,elapsed=0,entering=false,swapped=false;
   let stage=0,switchFrom=0,switchElapsed=0,reverseRemaining=0;
@@ -62,6 +49,7 @@ export function createCarTransformation(scene,player,camera,target) {
     smoke.position.copy(drivingPosition);smoke.visible=true;discover.visible=false;revert.visible=false;
   }
   window.addEventListener('keydown',event=>{
+    if(!isAvailable())return;
     if(controls.has(event.code)&&mode!=='walk'){
       event.preventDefault();
       if(mode==='car'&&!event.repeat&&!keys.has(event.code)){
@@ -83,10 +71,10 @@ export function createCarTransformation(scene,player,camera,target) {
   window.addEventListener('blur',()=>keys.clear());
   document.addEventListener('visibilitychange',()=>{if(document.hidden)keys.clear();});
   function update(dt){
+    if(!isAvailable()){discover.visible=false;revert.visible=false;return;}
     if(mode==='smoke'){
       elapsed+=dt;const t=Math.min(elapsed/CAR_SETTINGS.duration,1);
-      smokeMaterial.opacity=Math.sin(Math.PI*t);
-      smoke.children.forEach((p,i)=>{const a=i*Math.PI*2/10;p.position.set(Math.cos(a)*(.28+t*.95),.4+(i%3)*.3+t*.45,Math.sin(a)*(.28+t*.95));p.scale.setScalar(.42+Math.sin(Math.PI*t)*.4);});
+      smokeEffect.update(t);
       if(t>=.42&&!swapped){
         swapped=true;player.setVisible(!entering);car.visible=entering;
         if(entering){target.visible=false;car.position.copy(drivingPosition);car.rotation.y=heading-Math.PI/2;}

@@ -4,6 +4,7 @@ import {BUILDING_VOLUMES,createBuildingVolumes} from './building-volumes.js';
 import {createConfirmedViaduct} from './confirmed-viaduct.js';
 import {decorateCityBuildings} from './clean-buildings-test.js';
 import {applyCityAppearance,addCityGreenery} from './city-appearance.js';
+import {createViaductAccess} from './viaduct-access.js';
 
 // Original Excel landmark plots, with the already calibrated world spacing.
 // No density-test placement or temporary landmark substitution is used here.
@@ -32,11 +33,11 @@ export const CITY_BUILDINGS=[
     {id:`outer-${side}-middle`,width:3.2,depth:1.4,height:5.1,x:side*15.6,z:-2,turn:-side,tone:'cool'},
     {id:`outer-${side}-rail`,width:3.4,depth:1.4,height:4.1,x:side*15.6,z:3.7,turn:-side,tone:'white'},
     {id:`outer-${side}-south`,width:3,depth:1.4,height:3.8,x:side*15.6,z:21,turn:-side,tone:'cool',windowLevels:[2.75]},
-    {id:`north-infill-${side}`,width:2,depth:1.4,height:3.2,x:side*3.4,z:-17.15,tone:'white',windowLevels:[2.65]},
+    {id:`north-infill-${side}`,width:2,depth:1.4,height:3.2,x:side===-1?-4.1:3.4,z:side===-1?-19.05:-17.15,tone:'white',windowLevels:[2.65]},
   ]),
   {id:'south-infill-west',width:3.2,depth:1.4,height:4.8,x:-3.2,z:25.15,turn:2,tone:'white'},
   {id:'south-infill-east',width:2.8,depth:1.4,height:3.6,x:3.1,z:25.15,turn:2,tone:'cool',windowLevels:[2.65]},
-];
+].filter(b=>!['north-infill--1','outer-north-west'].includes(b.id)); // Only buildings intersecting the stair landing and westward flight.
 
 export async function createCity(scene) {
   const volumes=await createBuildingVolumes(scene);
@@ -63,5 +64,6 @@ export async function createCity(scene) {
   const paving=new THREE.MeshStandardMaterial({color:0xd3d6d4,roughness:1});
   for(const object of world.children)if(/:(supportPlot|udxPlot|yodobashiPlot)$/.test(object.name))object.material=paving;
   const finish=finishCity(scene);
-  return {root,boxes,viaduct,volumes,greenery,finish};
+  const access=createViaductAccess(scene,viaduct);
+  return {root,boxes,viaduct,volumes,greenery,finish,access};
 }

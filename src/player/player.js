@@ -25,6 +25,8 @@ export async function createPlayer(scene,camera) {
   placement.updateMatrixWorld(true);
   const bounds=new THREE.Box3().setFromObject(tanuki,true);
   placement.position.y=-bounds.min.y;
+  const groundBaseY=placement.position.y;
+  let groundHeight=0;
   const spawn=cellCenter(7,12); // I18 plaza; F18 remains completely empty.
   const center=bounds.getCenter(new THREE.Vector3());
   placement.position.x=spawn.x-center.x; placement.position.z=spawn.z-center.z;
@@ -40,6 +42,8 @@ export async function createPlayer(scene,camera) {
   }
   update(0);
   return {createArrivalPose(){return createTanukiArrivalPose({model,tanuki});},update,position,height:bounds.max.y-bounds.min.y,model,tanuki,
+    get groundHeight(){return groundHeight;},
+    setGroundHeight(height){groundHeight=height;placement.position.y=groundBaseY+height;placement.updateMatrixWorld(true);tanuki.getWorldPosition(position);},
     setWalking(enabled) { walking.setEnabled(enabled); },
     setVisible(visible) { placement.visible=visible; },
     setPosition(target) {

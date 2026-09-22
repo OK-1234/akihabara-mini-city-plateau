@@ -21,7 +21,7 @@ export function createConfirmedViaduct(scene, tested) {
   const pieceLength=trackBounds.max.z-trackBounds.min.z;
   function box(w,h,d,x,y,z,mat,name) {
     const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
-    m.position.set(x,y,z);m.name=name;m.receiveShadow=true;root.add(m);return m;
+    m.position.set(x,y,z);m.name=name;m.receiveShadow=true;m.castShadow=name==='vertical-deck-3'||name==='horizontal-deck-3';root.add(m);return m;
   }
   function wall(vertical,fixed,a,b,name) {
     if(b<=a)return;
@@ -47,9 +47,10 @@ export function createConfirmedViaduct(scene, tested) {
   box(DECK_WIDTH,.25,joinNorth-north,0,ELEVATION-.125,(north+joinNorth)/2,floorMat,'vertical-deck-3');
   box(east-west,.25,DECK_WIDTH,(west+east)/2,ELEVATION-.125,junction,floorMat,'horizontal-deck-3');
   const openingStart=north+.3,openingEnd=openingStart+OPENING_LENGTH;
-  wall(true,-side,north,openingStart,'west-wall-before-opening');
+  // The short dead-end wall is omitted so the sea-side stair landing is visible.
   wall(true,-side,openingEnd,joinNorth,'west-wall-after-opening');
   wall(true,side,north,joinNorth,'east-wall');
+  wall(false,north+WALL_THICKNESS/2,-DECK_WIDTH/2,DECK_WIDTH/2,'sea-end-wall');
   wall(false,junction-side,west,-DECK_WIDTH/2,'north-wall-west');
   wall(false,junction-side,DECK_WIDTH/2,east,'north-wall-east');
   wall(false,junction+side,west,east,'south-wall');
