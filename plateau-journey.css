@@ -1,0 +1,26 @@
+.journey-panel{position:fixed;left:20px;top:20px;z-index:30;width:min(270px,calc(100vw - 72px));padding:18px 20px;background:#fffffff2;border:1px solid #ffffff;border-radius:16px;box-shadow:0 8px 30px #26344016;color:#253c47}
+.eyebrow{font-size:10px;letter-spacing:2px;color:#527780;font-weight:700}
+.journey-panel h1{font-size:22px;margin:8px 0 24px;letter-spacing:.03em}
+.journey-stations{position:relative;height:20px;font-weight:700;font-size:13px}
+.journey-stations span{position:absolute;top:0}
+.journey-stations span:first-child{left:0}
+.journey-stations span:nth-child(2){transform:translateX(-50%)}
+.journey-stations span:last-child{right:0}
+.journey-panel progress{width:100%;height:7px;margin:10px 0 12px;accent-color:#087e8b}
+.journey-location{font-size:15px;font-weight:700;margin:6px 0}
+.journey-status{font-size:12px;min-height:32px;line-height:1.5;color:#526772;margin:8px 0}
+.journey-buttons{display:flex;gap:6px;flex-wrap:wrap}
+.journey-buttons button{font:inherit;font-size:12px;cursor:pointer;border:1px solid #cfdee1;border-radius:8px;padding:9px 10px;background:#f1f6f7;color:#254752}
+.journey-buttons button:first-child{background:#087e8b;color:white;border-color:#087e8b}
+.journey-buttons button:disabled{opacity:.45;cursor:wait}
+.journey-panel small{display:block;margin-top:14px;color:#61747b;font-size:10px;line-height:1.6}
+.speed-label{display:block;margin-top:12px;font-size:11px;color:#526772}
+.speed-label select{margin-left:8px;border:1px solid #cfdee1;border-radius:6px;padding:3px;background:white;color:#254752}
+.journey-map-label{position:fixed;transform:translate(-50%,-110%);pointer-events:none;z-index:10;padding:5px 10px;background:#fffefa;border:1px solid #e8555666;border-radius:20px;color:#923b43;font-size:12px;font-weight:700;box-shadow:0 2px 8px #0001}
+.journey-panel[data-state=error] .journey-status{color:#b42318}
+.journey-map-label.reached{background:#963e48;color:#fff;border-color:#963e48}
+.journey-map-label:enabled{pointer-events:auto;cursor:pointer;background:#087e8b;border:2px solid white;box-shadow:0 0 0 3px #087e8b44}
+.journey-map-label:disabled{opacity:1}
+.journey-map-label[hidden],.journey-panel[hidden]{display:none}
+.camera-help{font-size:11px;line-height:1.5;color:#526772;margin:10px 0 0}
+@media(max-width:650px){.journey-panel{top:auto;bottom:12px;left:12px;width:calc(100vw - 56px);padding:12px 16px}.journey-panel h1{font-size:18px;margin:4px 0 10px}.journey-panel small{margin-top:6px}.journey-status{min-height:18px}.journey-map-label{font-size:11px}}

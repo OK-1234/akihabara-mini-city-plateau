@@ -13,14 +13,18 @@ This project uses Three.js 0.180.0 and its official addons, including:
 - DRACOLoader
 
 License: MIT License  
-Copyright © three.js authors
+Copyright © 2010-2025 three.js authors
 
 Official website: https://threejs.org/  
 License information: https://threejs.org/license/
 
+Version-specific license (0.180.0 / r180): https://github.com/mrdoob/three.js/blob/r180/LICENSE
+The journey camera test also uses this same version of Three.js and OrbitControls
+through jsDelivr; it does not introduce a separate library or license.
+
 ### MIT License
 
-Copyright © three.js authors
+Copyright © 2010-2025 three.js authors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -79,6 +83,19 @@ Dataset:
 
 The Akihabara Station area was extracted and processed from the above dataset
 for use in this project.
+
+The Tokyo–Kanda–Akihabara city journey also uses the registered portions of this
+dataset. Its visualization processes the source data for display, including
+display colors and a building-reveal effect. Station positions are derived from
+the existing city data and project origin; intermediate guide points are an
+approximation authored for this project, not an official railway alignment.
+This processed visualization is not an official publication of Project PLATEAU
+or the Ministry of Land, Infrastructure, Transport and Tourism.
+
+出典：3D都市モデル（Project PLATEAU）東京都千代田区（2025年度）、G空間情報センター。
+本プロジェクトで範囲を抽出・加工して表示しています。案内経路は近似であり、公式の鉄道線形データではありません。
+
+Dataset source: https://www.geospatial.jp/ckan/dataset/plateau-13101-chiyoda-ku-2025
 
 The 3D city model is used in accordance with the Project PLATEAU Site Policy
 and the Public Data License 1.0 (PDL1.0).

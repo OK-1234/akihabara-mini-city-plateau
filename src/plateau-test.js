@@ -3,6 +3,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { TilesRenderer } from '3d-tiles-renderer';
+import { createJourney } from './plateau-journey.js';
+
+const journeyMode = new URLSearchParams(location.search).get('journey') === '1';
 
 // This viewer is independent of the game's entry point and coordinate system.
 const status = document.querySelector('#status');
@@ -221,6 +224,22 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
+const journey = journeyMode ? createJourney({
+  scene, camera, controls, renderer, whiteFade,
+  layers: [
+    { tiles, url: './assets/plateau/tileset.json', name: '建物' },
+    { tiles: roadTiles, url: './assets/plateau/tileset-road.json', name: '道路' },
+    { tiles: bridgeTiles, url: './assets/plateau/tileset-bridge.json', name: '橋梁' },
+    { tiles: waterTiles, url: './assets/plateau/tileset-water.json', name: '水域' },
+    { tiles: vegetationTiles, url: './assets/plateau/tileset-vegetation.json', name: '植生' },
+  ],
+  toLocal(lat, lon, height) {
+    const point = new THREE.Vector3();
+    tiles.ellipsoid.getCartographicToPosition(THREE.MathUtils.degToRad(lat), THREE.MathUtils.degToRad(lon), height, point);
+    return point.applyMatrix4(localToECEF.clone().invert());
+  },
+}) : null;
+
 // 建物にマウスを乗せたときだけ青くする
 function intersectBuildings(event) {
   const rect = renderer.domElement.getBoundingClientRect();
@@ -250,6 +269,7 @@ function setHoveredBuilding(mesh) {
 }
 
 renderer.domElement.addEventListener('pointermove', event => {
+  if (journeyMode) return;
   setHoveredBuilding(intersectBuildings(event)[0]?.object || null);
 });
 renderer.domElement.addEventListener('pointerleave', () => setHoveredBuilding(null));
@@ -258,6 +278,7 @@ let cameraMoving = false;
 let overheadReady = false;
 
 renderer.domElement.addEventListener('click', event => {
+  if (journeyMode) return;
   if (overheadReady) {
     overheadReady = false;
     cameraMoving = true;
@@ -415,8 +436,9 @@ renderer.domElement.addEventListener('click', event => {
   requestAnimationFrame(moveCamera);
 });
 
-renderer.setAnimationLoop(() => {
-  if (!cameraMoving && controls.enabled) {
+renderer.setAnimationLoop(now => {
+  journey?.update(now);
+  if (!journey && !cameraMoving && controls.enabled) {
     controls.update();
   }
 

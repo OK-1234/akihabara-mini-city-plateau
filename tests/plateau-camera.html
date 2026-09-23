@@ -1,0 +1,50 @@
+<!doctype html><meta charset="utf-8"><title>旅カメラの検証</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script>
+<pre id="result">検証中</pre>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js';
+import {createJourneyCamera,createStationArrival} from '../src/plateau-journey-camera.js';
+const results=[];
+const check=(name,ok)=>{if(!ok)throw Error(name);results.push('PASS '+name)};
+try{
+ const camera=new THREE.PerspectiveCamera(45,1,1,20000),canvas=new EventTarget();
+ const controls={target:new THREE.Vector3(),enabled:true,update(){camera.lookAt(this.target)}};
+ const center=new THREE.Vector3(),rig=createJourneyCamera(camera,controls,canvas,center);
+ const p=new THREE.Vector3(),direction=new THREE.Vector3(0,0,-1);
+ rig.update(p,direction,.016);check('既定の高い後方視点',camera.position.y===618&&camera.position.z===420);
+ canvas.dispatchEvent(new Event('wheel'));const before=camera.position.clone();
+ p.z=-50;rig.update(p,direction,.016);check('角度を保ちながら追従',camera.position.z===before.z-50);
+ const right=new Event('pointerdown');Object.defineProperty(right,'button',{value:2});canvas.dispatchEvent(right);
+ const free=camera.position.clone();p.z=-100;rig.update(p,direction,.016);check('右操作後はターゲットから独立',camera.position.equals(free)&&rig.mode==='free');
+ rig.select('follow','middle',true);rig.update(p,direction,.016);check('中段の後方視点',camera.position.y===278);
+ rig.select('follow','low',true);rig.update(p,direction,.016);check('低い後方視点',camera.position.y===118);
+ rig.select('overview','high',true);rig.update(p,direction,.016);check('全体ボタンで既定値へ',camera.position.y===3100);
+ const fade={style:{opacity:'0'}};let completed=0;
+ const arrival=createStationArrival(camera,controls,fade,()=>completed++);
+ for(let i=0;i<240;i++)arrival(1/60);
+ check('真上へ到着',camera.position.distanceTo(new THREE.Vector3(0,700,0))<.001);
+ const expected=camera.clone();expected.up.set(.09,0,-1).normalize();expected.lookAt(0,0,0);
+ check('既存の真上姿勢を維持',camera.quaternion.angleTo(expected.quaternion)<.001);
+ for(let i=0;i<200;i++)arrival(1/60);
+ check('ズーム・白フェード・1回だけ遷移',camera.position.y===180&&fade.style.opacity==='1'&&completed===1);
+ // Exercise the real OrbitControls event handlers with synthetic pointer events.
+ const surface=document.createElement('canvas');surface.width=800;surface.height=600;document.body.append(surface);
+ surface.setPointerCapture=()=>{};surface.releasePointerCapture=()=>{};
+ const camera2=new THREE.PerspectiveCamera(45,4/3,1,20000);
+ const orbit=new OrbitControls(camera2,surface),rig2=createJourneyCamera(camera2,orbit,surface,new THREE.Vector3());
+ rig2.update(new THREE.Vector3(),direction,.016);
+ function drag(button,x,y){
+   for(const [type,cx,cy,buttons] of [['pointerdown',300,300,button===2?2:1],['pointermove',x,y,button===2?2:1],['pointerup',x,y,0]])
+     surface.dispatchEvent(new PointerEvent(type,{pointerId:1,pointerType:'mouse',button,buttons,clientX:cx,clientY:cy,bubbles:true}));
+ }
+ const initial=camera2.position.clone();drag(0,450,350);rig2.update(new THREE.Vector3(),direction,.016);
+ check('OrbitControls 左ドラッグで角度が変わる',camera2.position.distanceTo(initial)>10);
+ const panTarget=orbit.target.clone();drag(2,500,380);rig2.update(new THREE.Vector3(),direction,.016);
+ check('OrbitControls 右ドラッグで地図を移動',rig2.mode==='free'&&orbit.target.distanceTo(panTarget)>10);
+ const held=camera2.position.clone();rig2.update(new THREE.Vector3(0,0,-200),direction,.016);
+ check('右ドラッグ後は移動中もカメラが独立',held.distanceTo(camera2.position)<.001);
+ orbit.dispose();surface.remove();
+ document.querySelector('#result').textContent=results.join('\n');
+}catch(error){document.querySelector('#result').textContent=results.join('\n')+'\nFAIL '+error.message;throw error;}
+</script>

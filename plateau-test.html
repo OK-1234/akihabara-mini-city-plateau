@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>秋葉原 PLATEAU LOD1 表示確認</title>
+  <link rel="stylesheet" href="./plateau-journey.css">
   <style>
     html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#dce5ec;font-family:system-ui,sans-serif}
     canvas{display:block}
@@ -27,6 +28,7 @@
   </aside>
   <script type="module">
     import('./src/plateau-test.js').catch(error => {
+      document.querySelector('aside').hidden = false;
       const status = document.querySelector('#status');
       status.dataset.error = 'true';
       status.textContent = `起動失敗：${error.message}（CDNへの接続を確認してください）`;
