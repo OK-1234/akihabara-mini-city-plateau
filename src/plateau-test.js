@@ -28,8 +28,9 @@ camera.position.set(650, 700, 850);
 
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
-let buildingMesh = null;
-let originalBuildingMaterial = null;
+const buildingMeshes = new Map();
+let hoveredBuilding = null;
+const hoverMaterial = new THREE.MeshStandardMaterial({ color: 0x4da6ff, roughness: 0.8 });
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 35, 0);
@@ -84,6 +85,20 @@ const east = new THREE.Vector3(-Math.sin(longitude), Math.cos(longitude), 0);
 const up = new THREE.Vector3(Math.cos(latitude) * Math.cos(longitude), Math.cos(latitude) * Math.sin(longitude), Math.sin(latitude));
 const south = new THREE.Vector3().crossVectors(east, up);
 const localToECEF = new THREE.Matrix4().makeBasis(east, up, south).setPosition(origin);
+
+// Optional initial view; keep Akihabara's origin and existing transitions intact.
+if (new URLSearchParams(location.search).get('station') === 'kanda') {
+  const kanda = new THREE.Vector3();
+  // 神田駅 feature coordinates from data2.b3dm.
+  tiles.ellipsoid.getCartographicToPosition(
+    THREE.MathUtils.degToRad(35.6914152608644),
+    THREE.MathUtils.degToRad(139.77079143628413), 36, kanda
+  );
+  kanda.applyMatrix4(localToECEF.clone().invert());
+  kanda.y = 0;
+  camera.position.add(kanda);
+  controls.target.add(kanda);
+}
 tiles.group.matrix.copy(localToECEF).invert();
 tiles.group.matrixAutoUpdate = false;
 scene.add(tiles.group);
@@ -143,7 +158,7 @@ roadTiles.addEventListener('load-model', ({ scene: model }) => {
   });
 });
 
-status.textContent = 'ローカルの tileset.json / data0.b3dm を読み込み中…';
+status.textContent = 'ローカルの秋葉原・神田の建物タイルを読み込み中…';
 let failed = false;
 let loaded = false;
 tiles.addEventListener('load-model', ({ scene: model }) => {
@@ -153,8 +168,7 @@ tiles.addEventListener('load-model', ({ scene: model }) => {
 
   model.traverse(object => {
     if (!object.isMesh) return;
-    buildingMesh = object;
-    originalBuildingMaterial = object.material;
+    buildingMeshes.set(object, object.material);
     console.log('MESH INFO', object.name, object.geometry.groups.length);
 
     const geometry = object.geometry;
@@ -180,6 +194,13 @@ tiles.addEventListener('load-model', ({ scene: model }) => {
   loaded = true;
   status.textContent = `読み込み完了 · ${triangles.toLocaleString()} 三角形`;
 });
+tiles.addEventListener('dispose-model', ({ scene: model }) => {
+  model.traverse(object => {
+    if (object === hoveredBuilding) setHoveredBuilding(null);
+    buildingMeshes.delete(object);
+  });
+});
+
 tiles.addEventListener('load-error', ({ error, url }) => {
   failed = true;
   status.dataset.error = 'true';
@@ -201,9 +222,7 @@ window.addEventListener('resize', resize);
 resize();
 
 // 建物にマウスを乗せたときだけ青くする
-renderer.domElement.addEventListener('pointermove', event => {
-  if (!buildingMesh) return;
-
+function intersectBuildings(event) {
   const rect = renderer.domElement.getBoundingClientRect();
 
   mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -211,22 +230,34 @@ renderer.domElement.addEventListener('pointermove', event => {
 
   raycaster.setFromCamera(mouse, camera);
 
-  const hits = raycaster.intersectObject(buildingMesh, true);
+  const visibleMeshes = [...buildingMeshes.keys()].filter(mesh => {
+    for (let parent = mesh; parent; parent = parent.parent) {
+      if (!parent.visible) return false;
+      if (parent === tiles.group) return true;
+    }
+    return false;
+  });
+  return raycaster.intersectObjects(visibleMeshes, false);
+}
 
-  if (hits.length > 0) {
-    buildingMesh.material = new THREE.MeshStandardMaterial({
-      color: 0x4da6ff,
-      roughness: 0.8
-    });
-  } else {
-    buildingMesh.material = originalBuildingMaterial;
+function setHoveredBuilding(mesh) {
+  if (hoveredBuilding === mesh) return;
+  if (hoveredBuilding && buildingMeshes.has(hoveredBuilding)) {
+    hoveredBuilding.material = buildingMeshes.get(hoveredBuilding);
   }
+  hoveredBuilding = mesh;
+  if (mesh) mesh.material = hoverMaterial;
+}
+
+renderer.domElement.addEventListener('pointermove', event => {
+  setHoveredBuilding(intersectBuildings(event)[0]?.object || null);
 });
+renderer.domElement.addEventListener('pointerleave', () => setHoveredBuilding(null));
 
 let cameraMoving = false;
 let overheadReady = false;
 
-renderer.domElement.addEventListener('click', () => {
+renderer.domElement.addEventListener('click', event => {
   if (overheadReady) {
     overheadReady = false;
     cameraMoving = true;
@@ -272,9 +303,9 @@ renderer.domElement.addEventListener('click', () => {
     return;
   }
 
-  if (!buildingMesh || cameraMoving) return;
+  if (!buildingMeshes.size || cameraMoving) return;
 
-  const hits = raycaster.intersectObject(buildingMesh, true);
+  const hits = intersectBuildings(event);
   if (hits.length === 0) return;
 
   cameraMoving = true;
