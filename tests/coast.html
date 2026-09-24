@@ -1,0 +1,29 @@
+<!doctype html><html lang="ja"><meta charset="utf-8"><title>海岸・実モデル表示テスト</title>
+<style>body{margin:0;overflow:hidden}nav{position:absolute;top:8px;left:8px;background:#fffd;padding:8px;font:13px sans-serif}button{margin:3px}output{display:block}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
+<nav>本編と同じ街・タヌキ・カメラの海岸確認（本編の開始位置は変更しません）<br>
+<button id="walk">波打ち際を歩く</button><button id="dry">乾いた砂を歩く</button><button id="stop">停止</button><button id="reset">中央へ</button><output>読み込み中</output></nav>
+<script type="module">
+import * as THREE from 'three';
+import {createWorld} from '../src/map/world.js';
+import {createCity} from '../src/map/city.js';
+import {createCamera} from '../src/camera.js';
+import {createPlayer} from '../src/player/player.js';
+const scene=new THREE.Scene();scene.background=new THREE.Color(0xe6e8e6);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;document.body.append(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xf4f8ff,0xb5ada0,2.2));const sun=new THREE.DirectionalLight(0xfff5e7,3);sun.position.set(-15,30,20);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-25,right:25,top:25,bottom:-25,near:.1,far:100});sun.shadow.normalBias=.015;scene.add(sun);
+createWorld(scene);const city=await createCity(scene),rig=createCamera(),player=await createPlayer(scene,rig.camera),coast=city.finish.userData.coast;
+const status=document.querySelector('output');let walk=0,last,frames=0,elapsed=0,report=0;
+function spawn(){player.setPosition(new THREE.Vector3(-3,0,coast.shore(-3)+1.8));}spawn();
+function resize(){renderer.setSize(innerWidth,innerHeight);rig.resize(innerWidth,innerHeight);}resize();addEventListener('resize',resize);
+document.querySelector('#walk').onclick=()=>{walk=.7;player.setPosition(new THREE.Vector3(-6,0,coast.shore(-6)+.7));};
+document.querySelector('#dry').onclick=()=>{walk=2.5;player.setPosition(new THREE.Vector3(-6,0,coast.shore(-6)+2.5));};
+document.querySelector('#stop').onclick=()=>walk=0;document.querySelector('#reset').onclick=()=>{walk=0;spawn();};
+renderer.setAnimationLoop(now=>{const raw=last?(now-last)/1000:0,dt=Math.min(raw,.05);last=now;
+  if(walk){const x=player.position.x+dt*1.5;player.tanuki.rotation.y=Math.atan2(x-player.position.x,coast.shore(x)+walk-player.position.z);player.setPosition(new THREE.Vector3(x,0,coast.shore(x)+walk));if(x>7)walk=0;}
+  player.update(dt);coast.update(dt,player);rig.follow(player.position,dt);renderer.render(scene,rig.camera);
+  frames++;elapsed+=raw;report+=raw;if(report>1){status.textContent=`描画中 · ${Math.round(frames/elapsed)} fps · 足跡 ${coast.marks.filter(m=>m.strength>0).length} · 時刻 ${coast.time.toFixed(1)} · ${renderer.info.render.triangles} 三角形`;report=0;frames=0;elapsed=0;}
+});
+</script></html>
