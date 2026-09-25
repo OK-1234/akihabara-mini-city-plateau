@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { createJourneyCamera, createStationArrival } from './plateau-journey-camera.js';
 import { createDistanceRoute, routeAnchors } from './plateau-route.js';
+import { createJourneyReveal } from './plateau-journey-reveal.js';
 
 export function createJourney({ scene, camera, controls, renderer, layers, toLocal, whiteFade }) {
   document.body.classList.add('journey-mode');
@@ -60,9 +61,12 @@ export function createJourney({ scene, camera, controls, renderer, layers, toLoc
   const buildingObjects = [];
   let surveyed = false;
   const inspectRoute = new URLSearchParams(window.location.search).has('inspectRoute');
-  // Reveal from the ground upward well ahead of travel. Geometry stays at its
+  // Reveal from the ground upward within the approaching camera view. Geometry stays at its
   // real position and scale; once revealed, buildings are never hidden again.
-  const revealFront = { value: points[0].z - 1000 };
+  const reveal = createJourneyReveal(points[0].z);
+  const revealFront = { value: reveal.front };
+  const revealMap = { value: 0 };
+  let revealHeight = 600;
   for (let i = 0; i < points.length; i++) {
     if (!routeAnchors[i].station) continue;
     const label = document.createElement('button'); label.className = 'journey-map-label';
@@ -97,12 +101,13 @@ export function createJourney({ scene, camera, controls, renderer, layers, toLoc
             const material = source.clone();
             material.onBeforeCompile = shader => {
               shader.uniforms.journeyFront = revealFront;
+              shader.uniforms.journeyMap = revealMap;
               shader.vertexShader = 'varying vec3 journeyWorld;\n' + shader.vertexShader;
               shader.vertexShader = shader.vertexShader.replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\njourneyWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;');
-              shader.fragmentShader = 'varying vec3 journeyWorld;\nuniform float journeyFront;\n' + shader.fragmentShader;
-              shader.fragmentShader = shader.fragmentShader.replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\nfloat growth = smoothstep(-60.0,60.0,journeyWorld.z - journeyFront);\nif (journeyWorld.y > mix(-30.0,350.0,growth)) discard;');
+              shader.fragmentShader = 'varying vec3 journeyWorld;\nuniform float journeyFront;\nuniform float journeyMap;\n' + shader.fragmentShader;
+              shader.fragmentShader = shader.fragmentShader.replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>\nfloat growth = smoothstep(-${reveal.width.toFixed(1)},${reveal.width.toFixed(1)},journeyWorld.z - journeyFront);\nif (journeyMap < .5 && journeyWorld.y > mix(-30.0,350.0,growth)) discard;`);
             };
-            material.customProgramCacheKey = () => 'journey-rise-v1';
+            material.customProgramCacheKey = () => 'journey-rise-v2';
             return material;
           };
           object.material = Array.isArray(object.material) ? object.material.map(decorate) : decorate(object.material);
@@ -146,6 +151,7 @@ export function createJourney({ scene, camera, controls, renderer, layers, toLoc
   function restart() {
     distance = 0; passedKanda = false; dwell = 0; running = false; elapsed = 0;
     firstFrame = true;
+    reveal.reset(); revealFront.value = reveal.front;
     overview = false; heightSelect.value = 'high'; cameraRig.select('follow', 'high', true);
   }
   reset.onclick = restart;
@@ -204,7 +210,6 @@ export function createJourney({ scene, camera, controls, renderer, layers, toLoc
         }
       }
       target.position.copy(route.sample(distance));
-      revealFront.value = Math.min(revealFront.value, cameraRig.mode === 'overview' ? -10000 : target.position.z - 1000);
       ahead.copy(route.sample(Math.min(route.length, distance + 100)));
       forward.copy(ahead).sub(target.position);
       if (forward.lengthSq() > 0.01) {
@@ -213,6 +218,10 @@ export function createJourney({ scene, camera, controls, renderer, layers, toLoc
       }
       const direction = new THREE.Vector3().copy(route.sample(Math.min(route.length, distance + 30))).sub(new THREE.Vector3().copy(route.sample(Math.max(0, distance - 30)))).normalize();
       cameraRig.update(target.position, direction, dt);
+      // Overview/free map may show all data without consuming the future reveal.
+      revealMap.value = cameraRig.mode === 'follow' ? 0 : 1;
+      if (cameraRig.mode === 'follow') revealHeight = camera.position.y - target.position.y;
+      revealFront.value = reveal.update(target.position.z, revealHeight, dt);
       target.scale.setScalar(THREE.MathUtils.clamp(camera.position.distanceTo(target.position) / 600, .55, 1));
       camera.updateMatrixWorld();
       for (const { label, point, distance: stationDistance, name } of labels) {
