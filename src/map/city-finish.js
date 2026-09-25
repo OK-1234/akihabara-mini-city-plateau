@@ -59,6 +59,7 @@ export function finishCity(scene) {
   const stoneTexture=new THREE.CanvasTexture(stoneCanvas);stoneTexture.colorSpace=THREE.SRGBColorSpace;stoneTexture.wrapS=stoneTexture.wrapT=THREE.RepeatWrapping;stoneTexture.anisotropy=4;
   const passageMaterial=new THREE.MeshStandardMaterial({map:stoneTexture,roughness:1});
   const walkingSpaceMaterial=new THREE.MeshStandardMaterial({map:stoneTexture,color:0xfff3dc,roughness:1});
+  const plotPavingMaterial=new THREE.MeshStandardMaterial({map:stoneTexture,color:0xe5edf0,roughness:1});
   // Surface colours only: retain every existing tile, boundary and height.
   const plotMaterial=mat(0xb0bfca),sidewalkEdge=mat(0xaaa99f);
   for(const tile of world.children){
@@ -74,12 +75,17 @@ export function finishCity(scene) {
   // Extend the same small rectangular stones over existing pedestrian surfaces.
   // World-space UVs keep stone size and joints continuous across map cells.
   for(const tile of world.children){
-    if(!/:(sidewalk|empty|station-rear-space)$/.test(tile.name)||tile.position.z<Z_EDGES[3])continue;
+    // Building plots also expose walkable ground between buildings and along
+    // the map edge, including the coastal row north of the main sidewalk.
+    const isPlot=/:(plot|supportPlot|udxPlot|yodobashiPlot)$/.test(tile.name);
+    // These raised access slabs cover the underlying empty tiles at the beach.
+    const isBeachAccess=tile.name==='beach:access';
+    if(!isPlot&&!isBeachAccess&&(!/:(sidewalk|empty|station-rear-space)$/.test(tile.name)||tile.position.z<Z_EDGES[3]))continue;
     const p=tile.geometry.parameters;if(!p?.width||!p?.depth)continue;
     const g=new THREE.PlaneGeometry(p.width,p.depth);g.rotateX(-Math.PI/2);
     const positions=g.attributes.position,uv=g.attributes.uv;
     for(let i=0;i<uv.count;i++)uv.setXY(i,(positions.getX(i)+tile.position.x)/2,(positions.getZ(i)+tile.position.z)/2);
-    const mesh=new THREE.Mesh(g,tile.name.endsWith(':sidewalk')?passageMaterial:walkingSpaceMaterial);mesh.position.set(tile.position.x,tile.position.y+p.height/2+.002,tile.position.z);
+    const mesh=new THREE.Mesh(g,isPlot?plotPavingMaterial:(isBeachAccess||tile.name.endsWith(':sidewalk'))?passageMaterial:walkingSpaceMaterial);mesh.position.set(tile.position.x,tile.position.y+p.height/2+.002,tile.position.z);
     mesh.receiveShadow=true;mesh.name='pedestrian-stone-paving';root.add(mesh);
   }
   // Existing sidewalks already provide the colour/height edge; whiten lane markings.
