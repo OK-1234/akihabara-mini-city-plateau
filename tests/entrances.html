@@ -1,7 +1,7 @@
-<!doctype html><html lang="ja"><meta charset="utf-8"><title>屋上設備の外観・通行確認</title>
-<style>body{margin:0;overflow:hidden}nav{position:absolute;top:8px;left:8px;background:#fffffff0;padding:10px;font:13px sans-serif;max-width:420px}button{margin:4px}output{display:block;white-space:pre-line}</style>
+<!doctype html><html lang="ja"><meta charset="utf-8"><title>入口6案の表示・通行確認</title>
+<style>body{margin:0;overflow:hidden}nav{position:absolute;top:8px;left:8px;background:#fffffff0;padding:10px;font:13px sans-serif;max-width:420px}button{margin:4px}output{display:block;white-space:pre-line;max-height:150px;overflow:auto}</style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
-<nav><button id="west">西側のアイボリービル</button><button id="east">東側の白いビル</button><button id="walk">入口前を歩く（実際の歩行処理）</button><button id="roof">外観全体（確認用視点）</button><output>読み込み中</output></nav>
+<nav><button id="west">A 両開き</button><button id="east">B 奥まった入口</button><button id="walk">入口前を歩く（実際の歩行処理）</button><button id="roof">入口単体（確認用視点）</button><output>読み込み中</output></nav>
 <script type="module">
 import * as THREE from 'three';
 import {createWorld} from '../src/map/world.js';
@@ -16,21 +16,21 @@ scene.add(new THREE.HemisphereLight(0xf4f8ff,0xb5ada0,2.2));
 const sun=new THREE.DirectionalLight(0xfff5e7,3);sun.position.set(-15,30,20);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
 Object.assign(sun.shadow.camera,{left:-25,right:25,top:25,bottom:-25,near:.1,far:100});sun.shadow.normalBias=.015;scene.add(sun);
 createWorld(scene);const city=await createCity(scene),rig=createCamera(),player=await createPlayer(scene,rig.camera);
-const ids=['general-west-north','general-east-west','general-west-south','general-east-rear','outer-east-north'],results=[];
+const ids=['general-east-west','general-east-east','general-east-rear','general-west-south','general-west-north','outer-east-north'],results=[];
 const check=(name,ok)=>{if(!ok)throw Error(name);results.push('PASS '+name);};
-check('変更対象は普通の建物5棟のみ',city.root.children.filter(g=>g.getObjectByName('featured-building-details')).length===5);
-check('ヨドバシ風建物は対象外',!city.root.getObjectByName('yodobashi').getObjectByName('featured-building-details'));
+check('入口6種類・普通の建物6棟のみ',city.root.children.filter(g=>g.getObjectByName('entrance-design')).length===6);
+check('ヨドバシ風建物は対象外',!city.root.getObjectByName('yodobashi').getObjectByName('entrance-design'));
 for(const id of ids){
- const b=CITY_BUILDINGS.find(b=>b.id===id),g=city.root.getObjectByName(id),details=g.getObjectByName('featured-building-details');
- check(id+'：元の外壁・入口・屋上の緑を維持',g.getObjectByName(id+':body').visible&&!!g.getObjectByName('clean-building-details')&&(!!g.getObjectByName('wide-entrance')||!!g.getObjectByName('entrance-design'))&&(g.userData.roofPattern==='F'||!!g.getObjectByName('roof-green')));
+ const b=CITY_BUILDINGS.find(b=>b.id===id),g=city.root.getObjectByName(id),details=g.getObjectByName('entrance-design');
+ check(id+'：上階の外観・屋上の緑を維持',g.getObjectByName(id+':body').visible&&!!g.getObjectByName('clean-building-details')&&(!!g.getObjectByName('wide-entrance')||!!g.getObjectByName('entrance-design'))&&(g.userData.roofPattern==='F'||!!g.getObjectByName('roof-green')));
  const bound=new THREE.Box3();let triangles=0;
- for(const mesh of details.children){mesh.geometry.computeBoundingBox();bound.union(mesh.geometry.boundingBox);triangles+=mesh.geometry.index.count/3;}
- check(id+'：通路への張り出し2cm以内',bound.min.x>=-b.width/2-.02&&bound.max.x<=b.width/2+.02&&bound.min.z>=-b.depth/2-.02&&bound.max.z<=b.depth/2+.02);
+ for(const mesh of details.children){const positions=mesh.geometry.attributes.position.array;check(id+'：座標が有限',positions.every(Number.isFinite));mesh.geometry.computeBoundingBox();bound.union(mesh.geometry.boundingBox);triangles+=mesh.geometry.index.count/3;}
+ check(id+'：入口設備が設定した外形の範囲内',bound.min.x>=-b.width/2-.05&&bound.max.x<=b.width/2+.05&&bound.min.z>=-b.depth/2-.02&&bound.max.z<=b.depth/2+.36);
  check(id+'：既存の位置・当たり判定用ボディ維持',g.position.x===b.x&&g.position.z===b.z&&city.boxes.includes(g.getObjectByName(id+':body')));
  check(id+'：12描画バッチ・2500三角形以内',details.children.length<=12&&triangles<=2500);
- results.push(`${id}: ${details.children.length} batches / ${triangles} triangles`);
+ results.push(`${details.userData.style} ${id}: ${details.children.length} batches / ${triangles} triangles`);
 }
-for(const id of ids.slice(2)){const button=document.createElement('button');button.textContent=id;button.onclick=()=>select(id);document.querySelector('nav').prepend(button);}
+for(const id of ids.slice(2)){const button=document.createElement('button');button.textContent=['C 風除室','D 木枠ショップ','E 角の入口','F オフィス'][ids.indexOf(id)-2];button.onclick=()=>select(id);document.querySelector('nav').prepend(button);}
 let chosen,walking=false,last,startX,roofView=false;
 const output=document.querySelector('output');
 function stop(){window.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowUp',code:'ArrowUp'}));walking=false;}
@@ -42,8 +42,11 @@ function resize(){renderer.setSize(innerWidth,innerHeight);rig.resize(innerWidth
 renderer.setAnimationLoop(now=>{const dt=last?Math.min((now-last)/1000,.05):0;last=now;player.update(dt);
  if(walking&&player.position.x-startX>=chosen.width+1){stop();output.textContent=results.join('\n')+'\nPASS 入口前を実際の歩行処理で通過';}
  city.finish.userData.coast.update(dt,player);rig.follow(player.position,dt);
- if(roofView){const target=new THREE.Vector3(chosen.x,chosen.height/2,chosen.z);rig.camera.position.copy(target).add(new THREE.Vector3(-30,30,30));rig.camera.lookAt(target);}
+ for(const g of city.root.children)g.visible=!roofView||g.name===chosen.id;
+ if(roofView){const angle=(chosen.turn??0)*Math.PI/2;const target=new THREE.Vector3(chosen.x,1.3,chosen.z);rig.camera.position.copy(target).add(new THREE.Vector3(-5,4,9).applyAxisAngle(new THREE.Vector3(0,1,0),angle));rig.camera.lookAt(target);}
  renderer.render(scene,rig.camera);
 });
 </script></html>
+
+
 
