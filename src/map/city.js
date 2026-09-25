@@ -5,6 +5,7 @@ import {createConfirmedViaduct} from './confirmed-viaduct.js';
 import {decorateCityBuildings} from './clean-buildings-test.js';
 import {applyCityAppearance,addCityGreenery} from './city-appearance.js';
 import {createViaductAccess} from './viaduct-access.js';
+import {decorateFeaturedBuildings} from './featured-buildings.js';
 
 // Original Excel landmark plots, with the already calibrated world spacing.
 // No density-test placement or temporary landmark substitution is used here.
@@ -55,6 +56,7 @@ export async function createCity(scene) {
   }
   decorateCityBuildings({root,boxes},CITY_BUILDINGS);
   applyCityAppearance(root,boxes,CITY_BUILDINGS,scene);
+  decorateFeaturedBuildings(root,CITY_BUILDINGS);
   const greenery=addCityGreenery(scene);
   // Keep the existing station footprint, but retire the orange test-layer tint.
   const world=scene.getObjectByName('Excel_B6_O20'),station=world.getObjectByName('G16:J17 駅');
