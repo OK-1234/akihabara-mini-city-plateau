@@ -67,6 +67,7 @@ export function createJourney({ scene, camera, controls, renderer, layers, toLoc
   const revealFront = { value: reveal.front };
   const revealMap = { value: 0 };
   let revealHeight = 600;
+  let buildingNorthZ = null;
   for (let i = 0; i < points.length; i++) {
     if (!routeAnchors[i].station) continue;
     const label = document.createElement('button'); label.className = 'journey-map-label';
@@ -105,9 +106,9 @@ export function createJourney({ scene, camera, controls, renderer, layers, toLoc
               shader.vertexShader = 'varying vec3 journeyWorld;\n' + shader.vertexShader;
               shader.vertexShader = shader.vertexShader.replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\njourneyWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;');
               shader.fragmentShader = 'varying vec3 journeyWorld;\nuniform float journeyFront;\nuniform float journeyMap;\n' + shader.fragmentShader;
-              shader.fragmentShader = shader.fragmentShader.replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>\nfloat growth = smoothstep(-${reveal.width.toFixed(1)},${reveal.width.toFixed(1)},journeyWorld.z - journeyFront);\nif (journeyMap < .5 && journeyWorld.y > mix(-30.0,350.0,growth)) discard;`);
+              shader.fragmentShader = shader.fragmentShader.replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>\nfloat growth = smoothstep(-${reveal.width.toFixed(1)},${reveal.width.toFixed(1)},journeyWorld.z - journeyFront);\nif (journeyMap < .5 && growth < 1.0 && journeyWorld.y > mix(-30.0,350.0,growth)) discard;`);
             };
-            material.customProgramCacheKey = () => 'journey-rise-v2';
+            material.customProgramCacheKey = () => 'journey-rise-v3';
             return material;
           };
           object.material = Array.isArray(object.material) ? object.material.map(decorate) : decorate(object.material);
@@ -179,6 +180,16 @@ export function createJourney({ scene, camera, controls, renderer, layers, toLoc
       const allLoaded = states.every(s => s.expected !== null && s.loaded.size >= s.expected);
       stableTime = allLoaded && !error ? stableTime + dt : 0;
       ready = stableTime > 1;
+      if (ready && buildingNorthZ === null) {
+        // Bounds in the existing local frame, once all registered tiles loaded.
+        scene.updateMatrixWorld(true);
+        const extent = new THREE.Box3();
+        for (const object of buildingObjects) {
+          object.geometry.computeBoundingBox();
+          extent.union(object.geometry.boundingBox.clone().applyMatrix4(object.matrixWorld));
+        }
+        if (!extent.isEmpty()) buildingNorthZ = extent.min.z;
+      }
       if (ready && !surveyed && inspectRoute) {
         surveyed = true;
         scene.updateMatrixWorld(true);
@@ -221,7 +232,8 @@ export function createJourney({ scene, camera, controls, renderer, layers, toLoc
       // Overview/free map may show all data without consuming the future reveal.
       revealMap.value = cameraRig.mode === 'follow' ? 0 : 1;
       if (cameraRig.mode === 'follow') revealHeight = camera.position.y - target.position.y;
-      revealFront.value = reveal.update(target.position.z, revealHeight, dt);
+      revealFront.value = reveal.update(target.position.z, revealHeight, dt,
+        { remaining: route.length - distance, northZ: buildingNorthZ });
       target.scale.setScalar(THREE.MathUtils.clamp(camera.position.distanceTo(target.position) / 600, .55, 1));
       camera.updateMatrixWorld();
       for (const { label, point, distance: stationDistance, name } of labels) {
@@ -243,6 +255,11 @@ export function createJourney({ scene, camera, controls, renderer, layers, toLoc
         play.disabled = !ready || !!error; reset.disabled = !ready || !!error;
         play.textContent = arrived ? 'もう一度出発' : running ? '一時停止' : distance > 0 ? '再開する' : '出発する';
         panel.dataset.state = error ? 'error' : !ready ? 'loading' : arrived ? 'arrived' : running ? 'running' : 'paused';
+        // Read-only verification values: distinguish loading from shader reveal.
+        panel.dataset.buildingsLoaded = String(states.find(s=>s.name==='建物')?.loaded.size ?? 0);
+        panel.dataset.buildingsExpected = String(states.find(s=>s.name==='建物')?.expected ?? '');
+        panel.dataset.revealComplete = String(buildingNorthZ !== null && revealFront.value + reveal.width < buildingNorthZ);
+        panel.dataset.remaining = String(Math.max(0, route.length-distance).toFixed(1));
       }
     },
   };
